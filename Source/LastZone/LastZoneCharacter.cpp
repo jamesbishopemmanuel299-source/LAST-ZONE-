@@ -1,0 +1,90 @@
+#include "LastZoneCharacter.h"
+#include "Camera/CameraComponent.h"
+#include "GameFramework/SpringArmComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Components/CapsuleComponent.h"
+#include "Kismet/KismetSystemLibrary.h"
+#include "LastZoneRescueBeacon.h"
+
+ALastZoneCharacter::ALastZoneCharacter()
+{
+    PrimaryActorTick.bCanEverTick = false;
+    GetCapsuleComponent()->InitCapsuleSize(42.f, 96.f);
+    bUseControllerRotationYaw = false;
+    GetCharacterMovement()->bOrientRotationToMovement = true;
+    GetCharacterMovement()->MaxWalkSpeed = 480.f;
+    GetCharacterMovement()->JumpZVelocity = 520.f;
+    GetCharacterMovement()->AirControl = 0.35f;
+
+    USpringArmComponent* Arm = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraArm"));
+    Arm->SetupAttachment(RootComponent);
+    Arm->TargetArmLength = 360.f;
+    Arm->bUsePawnControlRotation = true;
+    Arm->SocketOffset = FVector(0.f, 60.f, 65.f);
+
+    UCameraComponent* Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
+    Camera->SetupAttachment(Arm, USpringArmComponent::SocketName);
+    Camera->bUsePawnControlRotation = false;
+}
+
+void ALastZoneCharacter::SetupPlayerInputComponent(UInputComponent* Input)
+{
+    Super::SetupPlayerInputComponent(Input);
+    Input->BindAxis("MoveForward", this, &ALastZoneCharacter::MoveForward);
+    Input->BindAxis("MoveRight", this, &ALastZoneCharacter::MoveRight);
+    Input->BindAxis("Turn", this, &ALastZoneCharacter::Turn);
+    Input->BindAxis("LookUp", this, &ALastZoneCharacter::LookUp);
+    Input->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
+    Input->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
+    Input->BindAction("Interact", IE_Pressed, this, &ALastZoneCharacter::Interact);
+}
+
+void ALastZoneCharacter::MoveForward(float Value)
+{
+    if (Controller && FMath::Abs(Value) > KINDA_SMALL_NUMBER)
+        AddMovementInput(FRotationMatrix(Controller->GetControlRotation()).GetUnitAxis(EAxis::X), Value);
+}
+
+void ALastZoneCharacter::MoveRight(float Value)
+{
+    if (Controller && FMath::Abs(Value) > KINDA_SMALL_NUMBER)
+        AddMovementInput(FRotationMatrix(Controller->GetControlRotation()).GetUnitAxis(EAxis::Y), Value);
+}
+
+void ALastZoneCharacter::Turn(float Value) { AddControllerYawInput(Value); }
+void ALastZoneCharacter::LookUp(float Value) { AddControllerPitchInput(Value); }
+
+void ALastZoneCharacter::AddSupply(int32 Amount)
+{
+    SuppliesCollected += FMath::Max(0, Amount);
+    UKismetSystemLibrary::PrintString(this,
+        FString::Printf(TEXT("SUPPLIES: %d / 5"), SuppliesCollected), true, true,
+        FLinearColor(0.2f, 0.9f, 1.f), 3.f);
+}
+
+void ALastZoneCharacter::ActivateRescueBeacon()
+{
+    if (SuppliesCollected < 5)
+    {
+        UKismetSystemLibrary::PrintString(this, TEXT("Collect 5 supply caches before activating the rescue beacon."),
+            true, true, FLinearColor::Yellow, 3.f);
+        return;
+    }
+    bRescueBeaconActivated = true;
+    UKismetSystemLibrary::PrintString(this, TEXT("RESCUE SIGNAL ACTIVE — MISSION COMPLETE!"),
+        true, true, FLinearColor::Green, 8.f);
+}
+
+void ALastZoneCharacter::Interact()
+{
+    FVector Start = GetActorLocation() + FVector(0.f, 0.f, 50.f);
+    FVector End = Start + GetActorForwardVector() * 260.f;
+    FHitResult Hit;
+    FCollisionQueryParams Params;
+    Params.AddIgnoredActor(this);
+    if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params))
+    {
+        if (ALastZoneRescueBeacon* Beacon = Cast<ALastZoneRescueBeacon>(Hit.GetActor()))
+            Beacon->TryActivate(this);
+    }
+}
