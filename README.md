@@ -6,31 +6,30 @@ An original, non-combat 3D island exploration and rescue game built with Unreal 
 - Explore a remote island in third person.
 - Collect five supply caches.
 - Activate the island rescue beacon.
-- Stay inside the marked safe exploration area as the environment changes.
-- Use AI companion explorers for ambient activity.
+- Use the island's landmarks to navigate the prototype area.
 
 ## Current scope
-This repository is the C++ source foundation. It is not yet a compiled game or Android APK. It does not include online matchmaking or a 100-player service. The initial build is a local single-player prototype designed to establish movement, camera, pickups, objectives and Android input. Cinematic environment art, final character assets, UI polish and multiplayer services are later milestones.
+This repository contains the initial C++ source foundation. It has not yet been compiled or packaged as an Android APK. It is a local single-player prototype for movement, camera, pickups, objectives and basic mobile input. It does not include online matchmaking or a 100-player service. Cinematic environment art, final character assets, polished HUD, companion AI and multiplayer services are later milestones.
 
 ## Requirements
-- Unreal Engine 5.5 or newer
-- Visual Studio 2022 with C++ game development workload (Windows)
-- Android Studio and the SDK/NDK versions recommended for your Unreal Engine version
+- Unreal Engine 5.8
+- Visual Studio 2022 with the C++ game development workload (Windows)
+- Android Studio and the SDK/NDK versions recommended by the installed Unreal Engine release
 
 ## Open and run
-1. Download/clone the repository.
+1. Clone or download this repository.
 2. Right-click `LastZone.uproject` and generate IDE project files.
 3. Build the `Development Editor` target.
 4. Open the project in Unreal Editor.
-5. Create a level and set it as the startup map, then press Play.
-6. Keyboard testing: WASD to move, mouse to look, Space to jump, E to interact.
+5. Create and save a level, then press Play.
+6. Keyboard test controls: WASD to move, mouse to look, Space to jump, E to interact.
 
 ## Android
-Configure Android SDK/NDK in Unreal's Project Settings and package through Platforms > Android. Test on a physical Android device. Use scalable mobile settings and profile performance on the target device before increasing visual quality.
+Use Unreal's Android SDK setup workflow, configure the Android package name, and package from Platforms > Android. Test on a physical device and profile performance before increasing visual quality. Current Google Play target-SDK requirements mean using a recent Unreal release and its supported Android toolchain; see Epic's Android Quick Start documentation.
 
 ## Planned milestones
-1. Playable exploration prototype (this repository foundation).
-2. Island landscape, foliage, buildings, weather and cinematic lighting.
-3. Touch HUD, objectives, inventory and accessibility options.
-4. Companion AI, save system and mission progression.
-5. Optional cooperative networking, only after the offline game is stable.
+1. Compile and validate the source prototype.
+2. Add a designed island landscape, foliage, buildings, weather and cinematic lighting.
+3. Add touch HUD, objectives, inventory and accessibility options.
+4. Add save data, companion exploration AI and mission progression.
+5. Consider optional cooperative networking after the offline game is stable.
