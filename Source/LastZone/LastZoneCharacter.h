@@ -12,9 +12,9 @@ class LASTZONE_API ALastZoneCharacter : public ACharacter
 public:
     ALastZoneCharacter();
     virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
-
     void AddSupply(int32 Amount);
     void ActivateRescueBeacon();
+    void SetScoutAlert(bool bAlerted);
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Progress")
     int32 SuppliesCollected = 0;
@@ -22,10 +22,19 @@ public:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Progress")
     bool bRescueBeaconActivated = false;
 
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Stealth")
+    bool bStealthMode = false;
+
 private:
     void MoveForward(float Value);
     void MoveRight(float Value);
     void Turn(float Value);
     void LookUp(float Value);
     void Interact();
+    void StartSprint();
+    void StopSprint();
+    void ToggleStealth();
+    float NormalWalkSpeed = 480.f;
+    float SprintWalkSpeed = 720.f;
+    float StealthWalkSpeed = 220.f;
 };
