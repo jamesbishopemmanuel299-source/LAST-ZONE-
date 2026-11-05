@@ -5,6 +5,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "LastZoneRescueBeacon.h"
+#include "GameFramework/PlayerController.h"
 
 ALastZoneCharacter::ALastZoneCharacter()
 {
@@ -12,7 +13,7 @@ ALastZoneCharacter::ALastZoneCharacter()
     GetCapsuleComponent()->InitCapsuleSize(42.f, 96.f);
     bUseControllerRotationYaw = false;
     GetCharacterMovement()->bOrientRotationToMovement = true;
-    GetCharacterMovement()->MaxWalkSpeed = 480.f;
+    GetCharacterMovement()->MaxWalkSpeed = NormalWalkSpeed;
     GetCharacterMovement()->JumpZVelocity = 520.f;
     GetCharacterMovement()->AirControl = 0.35f;
 
@@ -37,6 +38,9 @@ void ALastZoneCharacter::SetupPlayerInputComponent(UInputComponent* Input)
     Input->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
     Input->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
     Input->BindAction("Interact", IE_Pressed, this, &ALastZoneCharacter::Interact);
+    Input->BindAction("Sprint", IE_Pressed, this, &ALastZoneCharacter::StartSprint);
+    Input->BindAction("Sprint", IE_Released, this, &ALastZoneCharacter::StopSprint);
+    Input->BindAction("Stealth", IE_Pressed, this, &ALastZoneCharacter::ToggleStealth);
 }
 
 void ALastZoneCharacter::MoveForward(float Value)
@@ -53,6 +57,30 @@ void ALastZoneCharacter::MoveRight(float Value)
 
 void ALastZoneCharacter::Turn(float Value) { AddControllerYawInput(Value); }
 void ALastZoneCharacter::LookUp(float Value) { AddControllerPitchInput(Value); }
+
+void ALastZoneCharacter::StartSprint()
+{
+    if (!bStealthMode) GetCharacterMovement()->MaxWalkSpeed = SprintWalkSpeed;
+}
+
+void ALastZoneCharacter::StopSprint()
+{
+    GetCharacterMovement()->MaxWalkSpeed = bStealthMode ? StealthWalkSpeed : NormalWalkSpeed;
+}
+
+void ALastZoneCharacter::ToggleStealth()
+{
+    bStealthMode = !bStealthMode;
+    GetCharacterMovement()->MaxWalkSpeed = bStealthMode ? StealthWalkSpeed : NormalWalkSpeed;
+    UKismetSystemLibrary::PrintString(this, bStealthMode ? TEXT("STEALTH: QUIET MOVEMENT") : TEXT("STEALTH OFF"),
+        true, true, FLinearColor(0.2f, 0.9f, 1.f), 2.f);
+}
+
+void ALastZoneCharacter::SetScoutAlert(bool bAlerted)
+{
+    UKismetSystemLibrary::PrintString(this, bAlerted ? TEXT("SCOUT ALERTED — HIDE OR MOVE OUT OF SIGHT") :
+        TEXT("SCOUT SEARCH ENDED"), true, true, bAlerted ? FLinearColor::Yellow : FLinearColor::Green, 2.f);
+}
 
 void ALastZoneCharacter::AddSupply(int32 Amount)
 {
