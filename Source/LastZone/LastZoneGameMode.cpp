@@ -2,6 +2,7 @@
 #include "LastZoneCharacter.h"
 #include "LastZoneCollectible.h"
 #include "LastZoneRescueBeacon.h"
+#include "LastZonePatrolScout.h"
 #include "Engine/World.h"
 #include "Engine/StaticMesh.h"
 #include "Components/StaticMeshComponent.h"
@@ -34,7 +35,6 @@ void ALastZoneGameMode::BuildPrototypeIsland()
             GroundMesh->RegisterComponent();
         }
 
-        // Simple landmark pillars mark the prototype island boundary.
         for (int32 i = 0; i < 12; ++i)
         {
             const float Angle = 2.f * PI * i / 12.f;
@@ -61,4 +61,7 @@ void ALastZoneGameMode::BuildPrototypeIsland()
 
     GetWorld()->SpawnActor<ALastZoneRescueBeacon>(
         ALastZoneRescueBeacon::StaticClass(), FVector(0,0,180), FRotator::ZeroRotator);
+
+    GetWorld()->SpawnActor<ALastZonePatrolScout>(
+        ALastZonePatrolScout::StaticClass(), FVector(1200.f, 900.f, 300.f), FRotator::ZeroRotator);
 }
