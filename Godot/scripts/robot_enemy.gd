@@ -15,6 +15,7 @@ var patrol_origin := Vector3.ZERO
 var patrol_target := Vector3.ZERO
 var patrol_clock := 0.0
 var attack_cooldown := 0.0
+var damage_flash_timer := 0.0
 var body_mesh: MeshInstance3D
 var eye_material: StandardMaterial3D
 var status_label: Label3D
@@ -80,6 +81,7 @@ func _build_robot() -> void:
 func _physics_process(delta: float) -> void:
     patrol_clock += delta
     attack_cooldown = maxf(0.0, attack_cooldown - delta)
+    damage_flash_timer = maxf(0.0, damage_flash_timer - delta)
     if player == null or not is_instance_valid(player):
         player = get_tree().current_scene.get_node_or_null("Player") as Node3D
     var target := patrol_origin + Vector3(
@@ -110,8 +112,17 @@ func _physics_process(delta: float) -> void:
     else:
         velocity.y = 0.0
     move_and_slide()
+    if player != null and global_position.distance_to(player.global_position) <= 1.8 and attack_cooldown <= 0.0:
+        var health_node := player.get_node_or_null("PlayerHealth")
+        if health_node != null and health_node.has_method("take_damage"):
+            health_node.call("take_damage", 12.0)
+            attack_cooldown = 1.2
     if status_label != null:
         status_label.text = state_text + "  •  " + str(roundi(health)) + "%"
+    if damage_flash_timer > 0.0 and eye_material != null:
+        eye_material.albedo_color = Color(1.0, 0.35, 0.2)
+    elif eye_material != null:
+        eye_material.albedo_color = Color(0.1, 0.85, 1.0)
     if body_mesh != null:
         body_mesh.rotation.z = sin(patrol_clock * 5.0) * 0.025
 
@@ -119,5 +130,7 @@ func apply_damage(amount: float) -> void:
     if amount <= 0.0:
         return
     health = maxf(0.0, health - amount)
+    damage_flash_timer = 0.16
     if health <= 0.0:
+        status_label.text = "UNIT DISABLED" if status_label != null else ""
         queue_free()
