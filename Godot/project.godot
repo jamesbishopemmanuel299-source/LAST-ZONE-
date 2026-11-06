@@ -7,7 +7,7 @@ config_version=5
 
 config/name="LAST-ZONE"
 run/main_scene="res://main.tscn"
-config/features=PackedStringArray("4.4", "GL Compatibility")
+config/features=PackedStringArray("4.4", "Mobile")
 
 [display]
 
