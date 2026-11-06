@@ -16,6 +16,8 @@ var aiming := false
 var camera: Camera3D
 var ammo_label: Label
 var status_label: Label
+var health_label: Label
+var player_health: Node
 var fire_button: Button
 var reload_button: Button
 var aim_button: Button
@@ -29,6 +31,7 @@ func _ready() -> void:
     var visual := get_parent().get_node_or_null("Visual")
     if visual != null:
         visual.hide()
+    player_health = get_parent().get_node_or_null("PlayerHealth")
     _setup_input()
     _build_weapon()
     _build_hud()
@@ -101,6 +104,11 @@ func _build_hud() -> void:
     ammo_label.add_theme_font_size_override("font_size", 20)
     ammo_label.add_theme_color_override("font_color", Color(0.9, 0.96, 1.0))
     layer.add_child(ammo_label)
+    health_label = Label.new()
+    health_label.position = Vector2(26, 86)
+    health_label.add_theme_font_size_override("font_size", 20)
+    health_label.add_theme_color_override("font_color", Color(0.35, 1.0, 0.65))
+    layer.add_child(health_label)
     status_label = Label.new()
     status_label.position = Vector2(26, 148)
     status_label.add_theme_font_size_override("font_size", 14)
@@ -136,6 +144,8 @@ func _make_button(layer: CanvasLayer, caption: String, at: Vector2, size: Vector
 
 func _process(delta: float) -> void:
     fire_timer = maxf(0.0, fire_timer - delta)
+    if health_label != null and player_health != null:
+        health_label.text = "PLAYER HP  %03d / %03d" % [roundi(player_health.health), roundi(player_health.max_health)]
     if reloading:
         reload_timer -= delta
         if reload_timer <= 0.0:
@@ -163,7 +173,7 @@ func _stop_firing() -> void:
     pass
 
 func _fire() -> void:
-    if reloading or fire_timer > 0.0:
+    if reloading or fire_timer > 0.0 or (player_health != null and player_health.defeated):
         return
     if ammo <= 0:
         status_label.text = "MAGAZINE EMPTY — RELOAD"
