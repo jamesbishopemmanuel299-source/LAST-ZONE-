@@ -14,7 +14,7 @@ The Godot project under this folder is the phone-first playable path. The Unreal
 
 ## Multiplayer status
 
-The ENet layer currently provides private room hosting and client connection setup on port 7777. It is a networking foundation only: replicated remote player spawning/movement, a dedicated authoritative server, reconnection handling, matchmaking, moderation and production hosting are not implemented yet. Do not treat the current build as a finished online multiplayer game.
+The ENet layer provides private room hosting/client connection on port 7777 and basic remote explorer position/yaw synchronization with lightweight remote avatars. It is suitable as an early LAN/private-session prototype. It is not production-ready: there is no dedicated authoritative server, matchmaking, account identity, server-side validation, reconnection flow, moderation, relay/NAT traversal or hosted infrastructure. Do not expose a home device directly to untrusted internet traffic.
 
 ## Android build status
 
