@@ -62,7 +62,7 @@ void ULastZoneInventoryWidget::RefreshInventory()
         if (Arsenal->Arsenal.IsValidIndex(WeaponIndex))
         {
             const FLastZoneWeaponData& Weapon = Arsenal->Arsenal[WeaponIndex];
-            const FString Marker = WeaponIndex == Arsenal->EquippedIndex ? TEXT("[EQUIPPED]\n") : TEXT("");
+            const FString Marker = Slot == 0 ? TEXT("[EQUIPPED]\n") : TEXT("");
             const FString Text = FString::Printf(TEXT("%s%s\n%s\nAMMO %d"),
                 *Marker, *Weapon.DisplayName.ToString(), *Weapon.Rarity.ToString(),
                 WeaponIndex == Arsenal->EquippedIndex ? Arsenal->AmmoInMagazine : Weapon.MagazineSize);
