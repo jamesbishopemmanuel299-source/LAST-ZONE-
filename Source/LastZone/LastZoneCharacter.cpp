@@ -60,6 +60,8 @@ void ALastZoneCharacter::BeginPlay()
         {
             InventoryWidget->SetArsenalComponent(ArsenalComponent);
             InventoryWidget->AddToViewport(20);
+            InventoryWidget->SetAlignmentInViewport(FVector2D(0.5f, 1.f));
+            InventoryWidget->SetPositionInViewport(FVector2D(0.f, -24.f));
         }
     }
 }
