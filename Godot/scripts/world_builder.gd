@@ -219,7 +219,7 @@ func _make_hud() -> void:
     layer.add_child(objective)
 
     collectible_label = Label.new()
-    collectible_label.text = "DISCOVERIES  0 / 8"
+    collectible_label.text = "DISCOVERIES  " + str(collected_count) + " / 8"
     collectible_label.position = Vector2(28, 82)
     collectible_label.add_theme_font_size_override("font_size", 16)
     collectible_label.add_theme_color_override("font_color", Color(0.5, 0.9, 1.0))
