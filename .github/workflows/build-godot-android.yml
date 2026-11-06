@@ -39,9 +39,10 @@ jobs:
       - name: Download Godot C++ bindings
         run: git clone --depth 1 --branch 4.4 https://github.com/godotengine/godot-cpp.git Godot/godot-cpp
 
-      - name: Build Android ARM64 debug and release GDExtension
+      - name: Build Linux editor and Android ARM64 GDExtension libraries
         working-directory: Godot
         run: |
+          scons platform=linux target=template_release arch=x86_64
           export ANDROID_NDK_ROOT="$ANDROID_HOME/ndk/$ANDROID_NDK_VERSION"
           export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/$ANDROID_NDK_VERSION"
           scons platform=android target=template_debug arch=arm64
