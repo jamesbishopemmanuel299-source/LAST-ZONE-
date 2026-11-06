@@ -1,0 +1,18 @@
+#!/usr/bin/env python3
+
+import os
+from SCons.Script import *
+
+if not os.path.isdir("bin"):
+    os.makedirs("bin")
+
+env = SConscript("godot-cpp/SConstruct")
+env.Append(CPPPATH=["src"])
+sources = Glob("src/*.cpp")
+
+library = env.SharedLibrary(
+    target="bin/liblast_zone",
+    source=sources
+)
+
+Default(library)
