@@ -1,7 +1,7 @@
 #pragma once
 
 #include <godot_cpp/classes/character_body3d.hpp>
-#include <godot_cpp/variant/ref.hpp>
+#include <godot_cpp/classes/ref.hpp>
 
 namespace godot {
 
