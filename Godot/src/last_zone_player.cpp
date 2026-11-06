@@ -56,8 +56,11 @@ void LastZonePlayer::_physics_process(double delta) {
         }
     }
 
-    current_velocity.x = direction.x * move_speed;
-    current_velocity.z = direction.z * move_speed;
+    const double active_speed = input->is_action_pressed("sprint")
+        ? move_speed * 1.55
+        : move_speed;
+    current_velocity.x = direction.x * active_speed;
+    current_velocity.z = direction.z * active_speed;
 
     set_velocity(current_velocity);
     move_and_slide();
