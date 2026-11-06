@@ -1,4 +1,5 @@
 #include "LastZoneCharacter.h"
+#include "LastZoneArsenalComponent.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -10,6 +11,7 @@
 ALastZoneCharacter::ALastZoneCharacter()
 {
     PrimaryActorTick.bCanEverTick = false;
+    ArsenalComponent = CreateDefaultSubobject<ULastZoneArsenalComponent>(TEXT("ArsenalComponent"));
     GetCapsuleComponent()->InitCapsuleSize(42.f, 96.f);
     bUseControllerRotationYaw = false;
     GetCharacterMovement()->bOrientRotationToMovement = true;
@@ -38,6 +40,10 @@ void ALastZoneCharacter::SetupPlayerInputComponent(UInputComponent* Input)
     Input->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
     Input->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
     Input->BindAction("Interact", IE_Pressed, this, &ALastZoneCharacter::Interact);
+    Input->BindAction("Fire", IE_Pressed, this, &ALastZoneCharacter::FireWeapon);
+    Input->BindAction("Reload", IE_Pressed, this, &ALastZoneCharacter::ReloadWeapon);
+    Input->BindAction("NextWeapon", IE_Pressed, this, &ALastZoneCharacter::NextWeapon);
+    Input->BindAction("PreviousWeapon", IE_Pressed, this, &ALastZoneCharacter::PreviousWeapon);
     Input->BindAction("Sprint", IE_Pressed, this, &ALastZoneCharacter::StartSprint);
     Input->BindAction("Sprint", IE_Released, this, &ALastZoneCharacter::StopSprint);
     Input->BindAction("Stealth", IE_Pressed, this, &ALastZoneCharacter::ToggleStealth);
@@ -115,4 +121,24 @@ void ALastZoneCharacter::Interact()
         if (ALastZoneRescueBeacon* Beacon = Cast<ALastZoneRescueBeacon>(Hit.GetActor()))
             Beacon->TryActivate(this);
     }
+}
+
+void ALastZoneCharacter::FireWeapon()
+{
+    if (ArsenalComponent) ArsenalComponent->FireArcadePulse();
+}
+
+void ALastZoneCharacter::ReloadWeapon()
+{
+    if (ArsenalComponent) ArsenalComponent->ReloadArcadeWeapon();
+}
+
+void ALastZoneCharacter::NextWeapon()
+{
+    if (ArsenalComponent) ArsenalComponent->EquipNext();
+}
+
+void ALastZoneCharacter::PreviousWeapon()
+{
+    if (ArsenalComponent) ArsenalComponent->EquipPrevious();
 }
