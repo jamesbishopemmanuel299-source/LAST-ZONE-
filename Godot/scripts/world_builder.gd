@@ -15,6 +15,7 @@ var beacon_material: StandardMaterial3D
 func _ready() -> void:
     _make_materials()
     _make_paths()
+    _make_expanded_island()
     _make_landmarks()
     _make_forest()
     _make_beacon()
@@ -273,3 +274,84 @@ func _make_menu(layer: CanvasLayer) -> void:
 func _start_game(shade: ColorRect, panel: PanelContainer) -> void:
     shade.hide()
     panel.hide()
+
+
+# Expanded island: distinct exploration regions, shoreline, roads and landmarks.
+func _make_expanded_island() -> void:
+    var sand := _mat(Color(0.58, 0.49, 0.32))
+    var water := _mat(Color(0.035, 0.22, 0.31))
+    var concrete := _mat(Color(0.30, 0.33, 0.34))
+    var glass := _mat(Color(0.12, 0.48, 0.58), true)
+
+    # Ocean surrounds the expanded landmass.
+    var ocean := MeshInstance3D.new()
+    var ocean_mesh := PlaneMesh.new()
+    ocean_mesh.size = Vector2(560, 560)
+    ocean.mesh = ocean_mesh
+    ocean.material_override = water
+    ocean.position = Vector3(0, -1.35, 0)
+    add_child(ocean)
+
+    # Sandy coastal strips frame the playable land.
+    _box(self, "NorthBeach", Vector3(0, -0.02, -203), Vector3(410, 0.12, 12), sand)
+    _box(self, "SouthBeach", Vector3(0, -0.02, 203), Vector3(410, 0.12, 12), sand)
+    _box(self, "WestBeach", Vector3(-203, -0.02, 0), Vector3(12, 0.12, 410), sand)
+    _box(self, "EastBeach", Vector3(203, -0.02, 0), Vector3(12, 0.12, 410), sand)
+
+    # Main roads connect four named regions.
+    _box(self, "WestEastRoad", Vector3(0, 0.025, 12), Vector3(330, 0.06, 8), dark_material)
+    _box(self, "NorthSouthRoad", Vector3(12, 0.03, 0), Vector3(8, 0.06, 330), dark_material)
+    _box(self, "HarborRoad", Vector3(105, 0.035, 120), Vector3(8, 0.07, 145), dark_material)
+    _box(self, "HillRoad", Vector3(-105, 0.035, -105), Vector3(8, 0.07, 145), dark_material)
+
+    # Village district.
+    _make_cabin(Vector3(72, 0, 48), "HarborVillageHouseA")
+    _make_cabin(Vector3(98, 0, 48), "HarborVillageHouseB")
+    _make_cabin(Vector3(72, 0, 76), "HarborVillageHouseC")
+    _make_cabin(Vector3(98, 0, 76), "HarborVillageHouseD")
+    _box(self, "VillageSquare", Vector3(85, 0.04, 62), Vector3(18, 0.08, 18), concrete)
+    _box(self, "HarborPier", Vector3(142, -0.05, 154), Vector3(9, 0.35, 46), wood_material, true)
+    for i in range(6):
+        _box(self, "PierPost", Vector3(138 + float(i % 2) * 8, 0.5, 135 + float(i) * 7), Vector3(0.65, 1.2, 0.65), wood_material)
+
+    # Research campus and glass-roofed visitor centre.
+    _box(self, "VisitorCentre", Vector3(-78, 2, -62), Vector3(22, 4, 16), wall_material, true)
+    _box(self, "VisitorRoof", Vector3(-78, 4.2, -62), Vector3(24, 0.7, 18), roof_material)
+    _box(self, "VisitorGlassFront", Vector3(-78, 2.1, -53.8), Vector3(13, 2.6, 0.18), glass)
+    _box(self, "ResearchHall", Vector3(-118, 2.5, -70), Vector3(20, 5, 18), concrete, true)
+    _box(self, "ResearchRoof", Vector3(-118, 5.2, -70), Vector3(22, 0.6, 20), roof_material)
+
+    # Hills and rock formations use low-poly primitives.
+    for i in range(14):
+        var angle := float(i) * TAU / 14.0
+        var ridge := MeshInstance3D.new()
+        var ridge_mesh := SphereMesh.new()
+        ridge_mesh.radius = 1.0
+        ridge_mesh.height = 2.0
+        ridge.mesh = ridge_mesh
+        ridge.material_override = stone_material
+        ridge.scale = Vector3(18.0 + float(i % 3) * 4.0, 7.0 + float(i % 4) * 1.5, 15.0)
+        ridge.position = Vector3(cos(angle) * 158.0, 3.0, sin(angle) * 158.0)
+        add_child(ridge)
+
+    # Tree placements are deterministic and avoid the central roads.
+    for i in range(110):
+        var angle := float(i) * 2.399
+        var radius := 78.0 + float(i % 8) * 13.0
+        var tx := cos(angle) * radius
+        var tz := sin(angle) * radius
+        if absf(tx) < 24.0 or absf(tz) < 24.0:
+            continue
+        if absf(tx) > 190.0 or absf(tz) > 190.0:
+            continue
+        _make_tree(Vector3(tx, 0, tz), 0.85 + float(i % 5) * 0.1)
+
+    # Scenic lighting at the harbour and visitor centre.
+    for lamp_at in [Vector3(142, 4, 132), Vector3(85, 4, 62), Vector3(-78, 5, -62)]:
+        var lamp := OmniLight3D.new()
+        lamp.position = lamp_at
+        lamp.light_color = Color(0.28, 0.68, 1.0)
+        lamp.light_energy = 0.7
+        lamp.omni_range = 12.0
+        lamp.shadow_enabled = false
+        add_child(lamp)
