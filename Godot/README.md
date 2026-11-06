@@ -1,24 +1,34 @@
-# LAST-ZONE — Android-first C++ exploration prototype
+# LAST-ZONE — Android-first exploration prototype
 
-The Godot project is the phone-first playable path. The Unreal Engine C++ project remains in the repository root.
+The Godot project under this folder is the phone-first playable path. The Unreal Engine C++ project remains in the repository root.
 
-## Current prototype upgrade
-- Camera-relative third-person movement, jump and hold-to-sprint.
-- Touch movement pad, jump and sprint controls; drag the right side to look around.
-- Procedurally generated island scenery: ranger cabins, lookout tower, forest, rocks, marked trails and a glowing navigation beacon.
-- On-screen objective and control HUD.
-- Godot Mobile renderer, atmospheric fog and a bounded shadow distance to keep the scene suitable for Android.
+## Current prototype features
 
-## Run and build
-1. Build the Android ARM64 GDExtension with the GitHub Actions workflow.
-2. Download and extract the debug/release libraries from the `last-zone-android-arm64` artifact into `Godot/bin/`.
-3. Open `Godot/project.godot` in Godot 4.4 or newer and run the project.
-4. To export an APK, install the matching Godot export templates, configure an Android ARM64 export preset, and export a debug APK.
+- Expanded 420 × 420 island floor surrounded by water, with coastal sand, roads and distinct exploration districts.
+- Harbor village, pier, ranger cabins, visitor centre, research hall, lookout tower, hills, forests and signal landmarks.
+- Procedural low-poly explorer character with a basic walk/run animation cycle.
+- Camera-relative movement, jump, sprint and touch controls.
+- Start lobby with private ENet host/join controls and a graphics-quality selector.
+- Live FPS counter for on-device performance checks.
+- Godot Mobile renderer, limited shadow distance and simple primitive materials.
 
-The workflow compiles the C++ extension only; it does not itself export a complete APK. For an Android-only workflow, use Godot Editor for Android and its documented Android export setup.
+## Multiplayer status
 
-## Performance notes
-The island is built from primitive meshes and does not require large downloaded assets. Keep shadows limited, avoid expensive transparent effects, and profile on the target phone before increasing scene density. Godot recommends choosing the Mobile renderer for newer mobile GPUs and Compatibility for older devices that need broader support.
+The ENet layer currently provides private room hosting and client connection setup on port 7777. It is a networking foundation only: replicated remote player spawning/movement, a dedicated authoritative server, reconnection handling, matchmaking, moderation and production hosting are not implemented yet. Do not treat the current build as a finished online multiplayer game.
 
-## Scope
-This is an exploration and navigation prototype. It does not yet include finished art assets, save data, or a production online matchmaking service.
+## Android build status
+
+The GitHub Actions workflow in this repository currently compiles the Android ARM64 C++ GDExtension libraries. It does **not** export a complete APK. A matching Godot 4.4+ editor, Android export templates, SDK/NDK and export preset are still required to package the full game.
+
+## Device QA checklist
+
+Test on real Android devices before release:
+
+1. Confirm the app opens and the lobby buttons fit the screen in portrait and landscape.
+2. Walk the coastline, village, research district and lookout area; check collisions and missing geometry.
+3. Test touch movement, camera drag, jump and sprint.
+4. Record FPS after 5 minutes in the village and forest; check heat, battery use and memory pressure.
+5. Compare Low, Medium and High settings on low-, mid- and high-range devices.
+6. Verify host/join on two devices connected to the same network; then test across separate networks only after a reachable server and firewall rules are configured.
+
+The FPS label is a diagnostic aid, not a substitute for profiling on physical devices. No physical-device test has been run by this workflow.
