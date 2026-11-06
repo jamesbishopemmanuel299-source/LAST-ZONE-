@@ -7,16 +7,16 @@
 UENUM(BlueprintType)
 enum class ELastZoneWeaponClass : uint8
 {
-    Pulse SMG,
-    Arc Rifle,
-    Nova Carbine,
-    Comet Launcher,
-    Prism Marksman,
-    Rift Shotcaster,
-    Sentinel Sidearm,
-    Vortex Cannon,
-    Echo Repeater,
-    Solar Burst
+    PulseSMG,
+    ArcRifle,
+    NovaCarbine,
+    CometLauncher,
+    PrismMarksman,
+    RiftShotcaster,
+    SentinelSidearm,
+    VortexCannon,
+    EchoRepeater,
+    SolarBurst
 };
 
 USTRUCT(BlueprintType)
