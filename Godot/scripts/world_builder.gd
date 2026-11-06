@@ -28,6 +28,7 @@ func _ready() -> void:
     _make_landmarks()
     _make_forest()
     _make_beacon()
+    _spawn_robot_patrols()
     environment_ref = get_node_or_null("WorldEnvironment") as WorldEnvironment
     sun_ref = get_node_or_null("Sun") as DirectionalLight3D
     _make_hud()
@@ -634,3 +635,26 @@ func _make_weather_button() -> void:
                 environment_ref.environment.fog_enabled = false
     )
     layer.add_child(button)
+
+
+# Add lightweight robot patrols around the research district and island routes.
+func _spawn_robot_patrols() -> void:
+    var robot_script := load("res://scripts/robot_enemy.gd")
+    if robot_script == null:
+        push_warning("Robot enemy script could not be loaded.")
+        return
+    var patrol_points := [
+        Vector3(38, 0.0, -28),
+        Vector3(52, 0.0, -20),
+        Vector3(68, 0.0, -34),
+        Vector3(-42, 0.0, 42),
+        Vector3(-58, 0.0, 28),
+        Vector3(12, 0.0, 68)
+    ]
+    for index in range(patrol_points.size()):
+        var robot := CharacterBody3D.new()
+        robot.name = "IslandSecurityRobot_%02d" % (index + 1)
+        robot.set_script(robot_script)
+        robot.position = patrol_points[index]
+        robot.set_meta("patrol_origin", patrol_points[index])
+        add_child(robot)
