@@ -1,0 +1,51 @@
+name: Build LAST-ZONE Godot Android Extension
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "Godot/**"
+      - ".github/workflows/build-godot-android.yml"
+
+jobs:
+  build-android-arm64:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out LAST-ZONE
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up Android SDK and NDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: "ndk;27.2.12479018"
+
+      - name: Install SCons
+        run: python -m pip install --upgrade scons
+
+      - name: Get Godot C++ bindings
+        run: git clone --depth 1 --branch 4.4 https://github.com/godotengine/godot-cpp.git Godot/godot-cpp
+
+      - name: Build Android ARM64 debug extension
+        working-directory: Godot
+        run: |
+          export ANDROID_NDK_ROOT="$ANDROID_HOME/ndk/27.2.12479018"
+          scons platform=android target=template_debug arch=arm64
+
+      - name: Build Android ARM64 release extension
+        working-directory: Godot
+        run: |
+          export ANDROID_NDK_ROOT="$ANDROID_HOME/ndk/27.2.12479018"
+          scons platform=android target=template_release arch=arm64
+
+      - name: Upload Android extension libraries
+        uses: actions/upload-artifact@v4
+        with:
+          name: last-zone-android-arm64
+          path: Godot/bin/*.so
+          if-no-files-found: error
+          retention-days: 14
