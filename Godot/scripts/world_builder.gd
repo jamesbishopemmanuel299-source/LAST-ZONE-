@@ -11,6 +11,8 @@ var wood_material: StandardMaterial3D
 var leaf_material: StandardMaterial3D
 var stone_material: StandardMaterial3D
 var beacon_material: StandardMaterial3D
+var performance_label: Label
+var performance_timer := 0.0
 
 func _ready() -> void:
     _make_materials()
@@ -184,6 +186,14 @@ func _make_hud() -> void:
     title.add_theme_font_size_override("font_size", 22)
     title.add_theme_color_override("font_color", Color(0.72, 0.91, 1.0))
     layer.add_child(title)
+
+    performance_label = Label.new()
+    performance_label.position = Vector2(-190, 20)
+    performance_label.anchor_left = 1.0
+    performance_label.anchor_right = 1.0
+    performance_label.add_theme_font_size_override("font_size", 14)
+    performance_label.add_theme_color_override("font_color", Color(0.65, 0.9, 1.0))
+    layer.add_child(performance_label)
 
     var objective := Label.new()
     objective.text = "OBJECTIVE  •  Reach the blue signal beacon"
@@ -457,3 +467,10 @@ func _apply_quality(index: int) -> void:
     if environment_node is WorldEnvironment and environment_node.environment:
         environment_node.environment.glow_enabled = index == 2
         environment_node.environment.fog_enabled = index != 0
+
+
+func _process(delta: float) -> void:
+    performance_timer += delta
+    if performance_timer >= 0.5 and is_instance_valid(performance_label):
+        performance_timer = 0.0
+        performance_label.text = str(Engine.get_frames_per_second()) + " FPS"
