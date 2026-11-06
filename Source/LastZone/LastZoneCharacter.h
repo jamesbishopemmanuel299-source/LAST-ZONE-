@@ -3,6 +3,8 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "LastZoneArsenalComponent.h"
+#include "LastZoneWeaponVisual.h"
+#include "LastZoneInventoryWidget.h"
 #include "LastZoneCharacter.generated.h"
 
 UCLASS()
@@ -15,6 +17,13 @@ public:
 
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Arsenal")
     TObjectPtr<ULastZoneArsenalComponent> ArsenalComponent;
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Arsenal")
+    TObjectPtr<ALastZoneWeaponVisual> WeaponVisual;
+
+    UPROPERTY()
+    TObjectPtr<ULastZoneInventoryWidget> InventoryWidget;
+    virtual void BeginPlay() override;
     virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
     void AddSupply(int32 Amount);
     void ActivateRescueBeacon();
