@@ -1,4 +1,4 @@
-name: Build LAST-ZONE Godot Android Extension
+name: Build LAST-ZONE Android APK
 
 on:
   workflow_dispatch:
@@ -8,46 +8,70 @@ on:
       - ".github/workflows/build-godot-android.yml"
 
 jobs:
-  build-android-arm64:
+  android-apk:
     runs-on: ubuntu-24.04
+    env:
+      GODOT_VERSION: 4.4.1
+      ANDROID_NDK_VERSION: 28.1.13356709
     steps:
-      - name: Check out LAST-ZONE
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Python and Android SDK
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Set up Android SDK and NDK
+      - name: Install Android SDK and NDK
         uses: android-actions/setup-android@v3
         with:
-          packages: "ndk;23.2.8568313"
+          packages: "platform-tools platforms;android-35 build-tools;35.0.0 ndk;28.1.13356709"
 
       - name: Install SCons
         run: python -m pip install --upgrade scons
 
-      - name: Get Godot C++ bindings
+      - name: Download Godot C++ bindings
         run: git clone --depth 1 --branch 4.4 https://github.com/godotengine/godot-cpp.git Godot/godot-cpp
 
-      - name: Build Android ARM64 debug extension
+      - name: Build Android ARM64 debug and release GDExtension
         working-directory: Godot
         run: |
-          export ANDROID_NDK_ROOT="$ANDROID_HOME/ndk/23.2.8568313"
-          export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/23.2.8568313"
+          export ANDROID_NDK_ROOT="$ANDROID_HOME/ndk/$ANDROID_NDK_VERSION"
+          export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/$ANDROID_NDK_VERSION"
           scons platform=android target=template_debug arch=arm64
-
-      - name: Build Android ARM64 release extension
-        working-directory: Godot
-        run: |
-          export ANDROID_NDK_ROOT="$ANDROID_HOME/ndk/23.2.8568313"
-          export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/23.2.8568313"
           scons platform=android target=template_release arch=arm64
 
-      - name: Upload Android extension libraries
+      - name: Download Godot editor and export templates
+        run: |
+          mkdir -p "$RUNNER_TEMP/godot" "$HOME/.local/share/godot/export_templates/$GODOT_VERSION.stable"
+          curl -L --fail "https://github.com/godotengine/godot/releases/download/$GODOT_VERSION-stable/Godot_v$GODOT_VERSION-stable_linux.x86_64.zip" -o "$RUNNER_TEMP/godot/editor.zip"
+          unzip -q "$RUNNER_TEMP/godot/editor.zip" -d "$RUNNER_TEMP/godot"
+          curl -L --fail "https://github.com/godotengine/godot/releases/download/$GODOT_VERSION-stable/Godot_v$GODOT_VERSION-stable_export_templates.tpz" -o "$RUNNER_TEMP/godot/templates.tpz"
+          unzip -q "$RUNNER_TEMP/godot/templates.tpz" -d "$RUNNER_TEMP/godot/templates"
+          cp "$RUNNER_TEMP/godot/templates/templates/"* "$HOME/.local/share/godot/export_templates/$GODOT_VERSION.stable/"
+
+      - name: Import project and validate scripts
+        run: |
+          GODOT_BIN=$(find "$RUNNER_TEMP/godot" -maxdepth 1 -type f -name 'Godot_v*.x86_64' | head -n 1)
+          chmod +x "$GODOT_BIN"
+          "$GODOT_BIN" --headless --path Godot --editor --quit
+
+      - name: Export universal ARM64 Android APK
+        run: |
+          GODOT_BIN=$(find "$RUNNER_TEMP/godot" -maxdepth 1 -type f -name 'Godot_v*.x86_64' | head -n 1)
+          mkdir -p build
+          "$GODOT_BIN" --headless --path Godot --export-debug "Android" build/LAST-ZONE-Android-arm64.apk
+
+      - name: Upload installable APK
         uses: actions/upload-artifact@v4
         with:
-          name: last-zone-android-arm64
-          path: Godot/bin/*.so
+          name: LAST-ZONE-Android-APK
+          path: build/LAST-ZONE-Android-arm64.apk
           if-no-files-found: error
           retention-days: 14
