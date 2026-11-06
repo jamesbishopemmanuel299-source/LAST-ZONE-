@@ -1,6 +1,7 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Texture2D" path="res://assets/touch_arrow.svg" id="1_arrow"]
+[ext_resource type="Script" path="res://scripts/world_builder.gd" id="2_world"]
 
 [sub_resource type="Environment" id="Environment_world"]
 background_mode = 1
@@ -10,6 +11,9 @@ ambient_light_color = Color(0.55, 0.62, 0.72, 1)
 ambient_light_energy = 0.8
 tonemap_mode = 2
 glow_enabled = true
+fog_enabled = true
+fog_light_color = Color(0.48, 0.59, 0.67, 1)
+fog_density = 0.003
 
 [sub_resource type="StandardMaterial3D" id="GroundMaterial"]
 albedo_color = Color(0.12, 0.25, 0.16, 1)
@@ -17,10 +21,10 @@ roughness = 1.0
 
 [sub_resource type="PlaneMesh" id="GroundMesh"]
 material = SubResource("GroundMaterial")
-size = Vector2(200, 200)
+size = Vector2(150, 150)
 
 [sub_resource type="BoxShape3D" id="GroundCollision"]
-size = Vector3(200, 1, 200)
+size = Vector3(150, 1, 150)
 
 [sub_resource type="CapsuleShape3D" id="PlayerCollision"]
 radius = 0.45
@@ -34,14 +38,16 @@ height = 1.8
 radius = 38.0
 
 [node name="Main" type="Node3D"]
+script = ExtResource("2_world")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_world")
 
 [node name="Sun" type="DirectionalLight3D" parent="."]
 rotation_degrees = Vector3(-48, -32, 0)
-light_energy = 1.4
+light_energy = 1.25
 shadow_enabled = true
+directional_shadow_max_distance = 65.0
 
 [node name="Ground" type="StaticBody3D" parent="."]
 position = Vector3(0, -0.5, 0)
@@ -108,4 +114,11 @@ position = Vector2(1115, 600)
 texture_normal = ExtResource("1_arrow")
 shape = SubResource("TouchButtonShape")
 action = "jump"
+visibility_mode = 1
+
+[node name="Sprint" type="TouchScreenButton" parent="TouchControls"]
+position = Vector2(1015, 500)
+texture_normal = ExtResource("1_arrow")
+shape = SubResource("TouchButtonShape")
+action = "sprint"
 visibility_mode = 1
