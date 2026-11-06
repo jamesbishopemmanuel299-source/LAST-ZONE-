@@ -225,8 +225,8 @@ func _make_menu(layer: CanvasLayer) -> void:
     var panel := PanelContainer.new()
     panel.name = "MainMenu"
     panel.set_anchors_preset(Control.PRESET_CENTER)
-    panel.position = Vector2(-205, -170)
-    panel.size = Vector2(410, 340)
+    panel.position = Vector2(-215, -285)
+    panel.size = Vector2(430, 570)
     var panel_style := StyleBoxFlat.new()
     panel_style.bg_color = Color(0.035, 0.075, 0.105, 0.98)
     panel_style.border_color = Color(0.16, 0.65, 0.9, 0.9)
