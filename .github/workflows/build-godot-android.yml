@@ -98,7 +98,7 @@ jobs:
           export/android/java_sdk_path = "$JAVA_HOME"
           export/android/debug_keystore = "$HOME/.android/debug.keystore"
           export/android/debug_keystore_user = "androiddebugkey"
-          export/android/debug_keystore_password = "android"
+          export/android/debug_keystore_pass = "android"
           EOF
           test -x "$JAVA_HOME/bin/java"
           test -x "$ANDROID_HOME/platform-tools/adb"
@@ -111,10 +111,17 @@ jobs:
           "$GODOT_BIN" --headless --path Godot --editor --quit
 
       - name: Export universal ARM64 Android APK
+        shell: bash
         run: |
+          set -euxo pipefail
           GODOT_BIN=$(find "$RUNNER_TEMP/godot" -maxdepth 1 -type f -name 'Godot_v*.x86_64' | head -n 1)
+          test -n "$GODOT_BIN"
+          export GODOT_ANDROID_KEYSTORE_DEBUG_PATH="$HOME/.android/debug.keystore"
+          export GODOT_ANDROID_KEYSTORE_DEBUG_USER="androiddebugkey"
+          export GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD="android"
           mkdir -p build
-          "$GODOT_BIN" --headless --path Godot --export-debug "Android" build/LAST-ZONE-Android-arm64.apk
+          "$GODOT_BIN" --headless --path Godot --verbose --export-debug "Android" "$GITHUB_WORKSPACE/build/LAST-ZONE-Android-arm64.apk"
+          test -s build/LAST-ZONE-Android-arm64.apk
 
       - name: Upload installable APK
         uses: actions/upload-artifact@v4
