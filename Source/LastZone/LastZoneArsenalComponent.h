@@ -26,6 +26,8 @@ struct FLastZoneWeaponData
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly) FName Id = NAME_None;
     UPROPERTY(EditAnywhere, BlueprintReadOnly) FText DisplayName;
+    UPROPERTY(EditAnywhere, BlueprintReadOnly) FText VisualDesign;
+    UPROPERTY(EditAnywhere, BlueprintReadOnly) FName Rarity = FName("Common");
     UPROPERTY(EditAnywhere, BlueprintReadOnly) ELastZoneWeaponClass WeaponClass = ELastZoneWeaponClass::PulseSMG;
     UPROPERTY(EditAnywhere, BlueprintReadOnly) float GameDamage = 18.f;
     UPROPERTY(EditAnywhere, BlueprintReadOnly) float Cooldown = 0.16f;
