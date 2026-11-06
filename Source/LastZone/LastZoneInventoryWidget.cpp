@@ -80,6 +80,9 @@ void ULastZoneInventoryWidget::RefreshInventory()
 void ULastZoneInventoryWidget::EquipSlot(int32 SlotIndex)
 {
     if (!Arsenal || !Arsenal->Arsenal.IsValidIndex(SlotIndex)) return;
-    const int32 Count = Arsenal->Arsenal.Num();\n    if (Count < 1) return;\n    const int32 TargetIndex = (Arsenal->EquippedIndex + SlotIndex) % Count;\n    while (Arsenal->EquippedIndex != TargetIndex) Arsenal->EquipNext();
+    const int32 Count = Arsenal->Arsenal.Num();
+    if (Count < 1) return;
+    const int32 TargetIndex = (Arsenal->EquippedIndex + SlotIndex) % Count;
+    while (Arsenal->EquippedIndex != TargetIndex) Arsenal->EquipNext();
     RefreshInventory();
 }
