@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "LastZoneArsenalComponent.h"
 #include "LastZoneCharacter.generated.h"
 
 UCLASS()
@@ -11,6 +12,9 @@ class LASTZONE_API ALastZoneCharacter : public ACharacter
 
 public:
     ALastZoneCharacter();
+
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Arsenal")
+    TObjectPtr<ULastZoneArsenalComponent> ArsenalComponent;
     virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
     void AddSupply(int32 Amount);
     void ActivateRescueBeacon();
@@ -31,6 +35,10 @@ private:
     void Turn(float Value);
     void LookUp(float Value);
     void Interact();
+    void FireWeapon();
+    void ReloadWeapon();
+    void NextWeapon();
+    void PreviousWeapon();
     void StartSprint();
     void StopSprint();
     void ToggleStealth();
