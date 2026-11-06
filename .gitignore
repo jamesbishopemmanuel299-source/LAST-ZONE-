@@ -1,12 +1,3 @@
-Binaries/
-DerivedDataCache/
-Intermediate/
-Saved/
-.vs/
-*.sln
-*.suo
-*.user
-*.opensdf
-*.sdf
-*.VC.db
-*.VC.VC.opendb
+.godot/
+Godot/godot-cpp/
+Godot/bin/*.so
