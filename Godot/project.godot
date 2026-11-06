@@ -1,0 +1,47 @@
+; Engine configuration file.
+; LAST-ZONE Android-first C++ prototype.
+
+config_version=5
+
+[application]
+
+config/name="LAST-ZONE"
+run/main_scene="res://main.tscn"
+config/features=PackedStringArray("4.4", "GL Compatibility")
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/handheld/orientation=0
+window/stretch/mode="canvas_items"
+
+[input]
+
+move_left={
+"deadzone": 0.2,
+"events": [Object(InputEventKey, "physical_keycode": 65)]
+}
+move_right={
+"deadzone": 0.2,
+"events": [Object(InputEventKey, "physical_keycode": 68)]
+}
+move_forward={
+"deadzone": 0.2,
+"events": [Object(InputEventKey, "physical_keycode": 87)]
+}
+move_back={
+"deadzone": 0.2,
+"events": [Object(InputEventKey, "physical_keycode": 83)]
+}
+jump={
+"deadzone": 0.2,
+"events": [Object(InputEventKey, "physical_keycode": 32)]
+}
+
+[rendering]
+
+renderer/rendering_method="mobile"
+renderer/rendering_method.mobile="mobile"
+textures/default_filters/use_nearest_mipmap_filter=false
+environment/defaults/default_clear_color=Color(0.035, 0.055, 0.08, 1)
