@@ -3,6 +3,7 @@
 [ext_resource type="Texture2D" path="res://assets/touch_arrow.svg" id="1_arrow"]
 [ext_resource type="Script" path="res://scripts/world_builder.gd" id="2_world"]
 [ext_resource type="Script" path="res://scripts/character_visual.gd" id="3_character"]
+[ext_resource type="Script" path="res://scripts/fps_combat.gd" id="4_combat"]
 
 [sub_resource type="Environment" id="Environment_world"]
 background_mode = 1
@@ -71,13 +72,17 @@ mesh = SubResource("PlayerMesh")
 script = ExtResource("3_character")
 
 [node name="SpringArm3D" type="SpringArm3D" parent="Player"]
-rotation_degrees = Vector3(-14, 0, 0)
-spring_length = 5.0
-margin = 0.2
+position = Vector3(0, 1.55, 0)
+rotation_degrees = Vector3(-2, 0, 0)
+spring_length = 0.12
+margin = 0.05
 
 [node name="Camera3D" type="Camera3D" parent="Player/SpringArm3D"]
 current = true
-fov = 75.0
+fov = 82.0
+
+[node name="FPSCombat" type="Node" parent="Player"]
+script = ExtResource("4_combat")
 
 [node name="TouchControls" type="CanvasLayer" parent="."]
 
