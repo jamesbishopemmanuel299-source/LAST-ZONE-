@@ -80,6 +80,30 @@ jobs:
           unzip -q "$RUNNER_TEMP/godot/templates.tpz" -d "$RUNNER_TEMP/godot/templates"
           cp "$RUNNER_TEMP/godot/templates/templates/"* "$HOME/.local/share/godot/export_templates/$GODOT_VERSION.stable/"
 
+      - name: Configure Godot Android export environment
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p "$HOME/.config/godot" "$HOME/.android"
+          keytool -genkeypair -v \
+            -keystore "$HOME/.android/debug.keystore" \
+            -storepass android -keypass android \
+            -alias androiddebugkey -keyalg RSA -keysize 2048 \
+            -validity 10000 -dname "CN=Android Debug,O=Android,C=US" \
+            -noprompt
+          cat > "$HOME/.config/godot/editor_settings-4.tres" <<EOF
+          [gd_resource type="EditorSettings" format=3]
+          [resource]
+          export/android/android_sdk_path = "$ANDROID_HOME"
+          export/android/java_sdk_path = "$JAVA_HOME"
+          export/android/debug_keystore = "$HOME/.android/debug.keystore"
+          export/android/debug_keystore_user = "androiddebugkey"
+          export/android/debug_keystore_pass = "android"
+          EOF
+          test -x "$JAVA_HOME/bin/java"
+          test -x "$ANDROID_HOME/platform-tools/adb"
+          test -f "$HOME/.android/debug.keystore"
+
       - name: Import project and validate scripts
         run: |
           GODOT_BIN=$(find "$RUNNER_TEMP/godot" -maxdepth 1 -type f -name 'Godot_v*.x86_64' | head -n 1)
