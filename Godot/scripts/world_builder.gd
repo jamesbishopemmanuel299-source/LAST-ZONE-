@@ -212,3 +212,64 @@ func _make_hud() -> void:
     reticle.add_theme_font_size_override("font_size", 24)
     reticle.add_theme_color_override("font_color", Color(0.75, 0.91, 1.0, 0.85))
     layer.add_child(reticle)
+    _make_menu(layer)
+
+func _make_menu(layer: CanvasLayer) -> void:
+    var shade := ColorRect.new()
+    shade.name = "MenuShade"
+    shade.color = Color(0.015, 0.035, 0.055, 0.88)
+    shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    layer.add_child(shade)
+
+    var panel := PanelContainer.new()
+    panel.name = "MainMenu"
+    panel.set_anchors_preset(Control.PRESET_CENTER)
+    panel.position = Vector2(-205, -170)
+    panel.size = Vector2(410, 340)
+    var panel_style := StyleBoxFlat.new()
+    panel_style.bg_color = Color(0.035, 0.075, 0.105, 0.98)
+    panel_style.border_color = Color(0.16, 0.65, 0.9, 0.9)
+    panel_style.set_border_width_all(2)
+    panel_style.set_corner_radius_all(16)
+    panel_style.content_margin_left = 24
+    panel_style.content_margin_right = 24
+    panel_style.content_margin_top = 22
+    panel_style.content_margin_bottom = 22
+    panel.add_theme_stylebox_override("panel", panel_style)
+    layer.add_child(panel)
+
+    var stack := VBoxContainer.new()
+    stack.add_theme_constant_override("separation", 14)
+    panel.add_child(stack)
+
+    var heading := Label.new()
+    heading.text = "LAST-ZONE"
+    heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    heading.add_theme_font_size_override("font_size", 34)
+    heading.add_theme_color_override("font_color", Color(0.58, 0.86, 1.0))
+    stack.add_child(heading)
+
+    var subtitle := Label.new()
+    subtitle.text = "ISLAND EXPEDITION  /  ANDROID"
+    subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    subtitle.add_theme_font_size_override("font_size", 13)
+    subtitle.add_theme_color_override("font_color", Color(0.75, 0.84, 0.91))
+    stack.add_child(subtitle)
+
+    var start_button := Button.new()
+    start_button.text = "START EXPLORING"
+    start_button.custom_minimum_size = Vector2(0, 54)
+    start_button.add_theme_font_size_override("font_size", 18)
+    start_button.pressed.connect(_start_game.bind(shade, panel))
+    stack.add_child(start_button)
+
+    var info := Label.new()
+    info.text = "Explore the island, find the ranger cabins,\nand reach the glowing signal beacon.\n\nOnline matchmaking is not connected yet."
+    info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    info.add_theme_font_size_override("font_size", 14)
+    info.add_theme_color_override("font_color", Color(0.78, 0.85, 0.91))
+    stack.add_child(info)
+
+func _start_game(shade: ColorRect, panel: PanelContainer) -> void:
+    shade.hide()
+    panel.hide()
