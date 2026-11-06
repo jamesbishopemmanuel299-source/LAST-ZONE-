@@ -1,27 +1,36 @@
 # LAST-ZONE
 
-LAST-ZONE currently contains two C++ prototype paths:
+LAST-ZONE contains a Godot Android-first 3D exploration game and an original Unreal Engine C++ prototype.
 
-- **Godot Android prototype:** open `Godot/project.godot`. This is the Android-first third-person exploration prototype, using C++ through GDExtension. See [Godot/README.md](Godot/README.md).
-- **Unreal Engine prototype:** the original Unreal Engine 5.8 project remains in the repository root, with its C++ island exploration and rescue systems.
+## Godot Android game
 
-## Godot Android build
+Open `Godot/project.godot` with Godot 4.4.1 or a compatible 4.4+ editor.
 
-A GitHub Actions workflow builds the Android ARM64 C++ extension libraries:
+Current prototype systems include:
+- Large island with a harbor village, cabins, research district, pier, lookout, forest, trails and coastal scenery.
+- Explorer avatar, third-person camera, movement, sprint, jump and Android touch controls.
+- Walk-in cabin interiors and simple furnishings.
+- Day/night lighting cycle and selectable clear/mist weather effects.
+- Eight collectible discoveries with local save progress.
+- Island field guide, objective HUD, FPS counter and graphics settings.
+- Experimental private ENet sessions with basic position synchronization. This is not public matchmaking or production multiplayer.
 
-1. Open the repository's **Actions** tab.
-2. Run **Build LAST-ZONE Godot Android Extension**, or wait for the workflow triggered by a change in the Godot folder.
-3. Download the `last-zone-android-arm64` artifact.
-4. Extract the debug and release `.so` files into `Godot/bin/`.
-5. Open `Godot/project.godot` using Godot Editor for Android.
-6. Configure an Android export preset and export an APK.
+## Build an Android APK with GitHub Actions
 
-The workflow builds the C++ extension only; it does not create an APK. For Gradle-based Android export from the Android editor, install the Godot Android Build Environment (GABE). The original Unreal project is not converted or deleted.
+The workflow **Build LAST-ZONE Android APK** builds the C++ GDExtension libraries, downloads the matching Godot editor/export templates, and attempts an ARM64 Android APK export.
 
-## Unreal Engine project
+1. Open the repository **Actions** tab.
+2. Select **Build LAST-ZONE Android APK** and choose **Run workflow**, or wait for a push to the Godot project.
+3. Open the completed run and download **LAST-ZONE-Android-APK** from Artifacts.
 
-The Unreal project requires a compatible Unreal Engine installation and its Android SDK/NDK toolchain. The Unreal Editor is a desktop editor; for a phone-first workflow, use the Godot project in the `Godot/` folder.
+The workflow must finish successfully before an installable APK is available. If it fails, open the failed step and share its log for correction. The APK is ARM64 and is not guaranteed to install on 32-bit-only phones.
 
-## Current scope
+## Multiplayer limitations
 
-The Godot project is an early playable foundation: third-person movement, camera control, touch movement/jump buttons, a simple 3D test island and collision. It is not a finished game and does not yet contain detailed environment art, missions, saves or multiplayer.
+Private ENet host/join is an early LAN experiment. It has no dedicated server, matchmaking, account identity, server-side validation, reconnection, relay/NAT traversal, moderation or hosted infrastructure. Do not expose a personal device directly to untrusted internet traffic.
+
+## Device testing
+
+A successful CI export does not replace testing on a real Android device. Check touch controls, screen layout, collision, frame rate, heat, battery use, memory use and session connectivity before release.
+
+The Unreal Engine C++ project remains in the repository root and is separate from the Godot Android build.
