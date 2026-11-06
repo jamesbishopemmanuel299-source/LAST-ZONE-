@@ -271,6 +271,38 @@ func _make_menu(layer: CanvasLayer) -> void:
     info.add_theme_color_override("font_color", Color(0.78, 0.85, 0.91))
     stack.add_child(info)
 
+    var lobby_status := Label.new()
+    lobby_status.name = "LobbyStatus"
+    lobby_status.text = "OFFLINE SESSION"
+    lobby_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    lobby_status.add_theme_font_size_override("font_size", 12)
+    lobby_status.add_theme_color_override("font_color", Color(0.55, 0.82, 0.96))
+    stack.add_child(lobby_status)
+
+    var host_button := Button.new()
+    host_button.text = "HOST PRIVATE SESSION"
+    host_button.custom_minimum_size = Vector2(0, 42)
+    host_button.pressed.connect(_host_session.bind(lobby_status))
+    stack.add_child(host_button)
+
+    var address := LineEdit.new()
+    address.name = "ServerAddress"
+    address.placeholder_text = "Host address (e.g. 127.0.0.1)"
+    address.text = "127.0.0.1"
+    stack.add_child(address)
+
+    var join_button := Button.new()
+    join_button.text = "JOIN SESSION"
+    join_button.custom_minimum_size = Vector2(0, 42)
+    join_button.pressed.connect(_join_session.bind(address, lobby_status))
+    stack.add_child(join_button)
+
+    var settings_button := Button.new()
+    settings_button.text = "SETTINGS"
+    settings_button.custom_minimum_size = Vector2(0, 42)
+    settings_button.pressed.connect(_open_settings.bind(layer))
+    stack.add_child(settings_button)
+
 func _start_game(shade: ColorRect, panel: PanelContainer) -> void:
     shade.hide()
     panel.hide()
@@ -355,3 +387,73 @@ func _make_expanded_island() -> void:
         lamp.omni_range = 12.0
         lamp.shadow_enabled = false
         add_child(lamp)
+
+
+func _host_session(status: Label) -> void:
+    var network = get_node_or_null("/root/SessionNetwork")
+    if network == null:
+        status.text = "NETWORK SERVICE UNAVAILABLE"
+        return
+    var result: int = network.host_session()
+    status.text = "SESSION CREATED • PORT 7777" if result == OK else "HOST FAILED • ERROR " + str(result)
+
+func _join_session(address: LineEdit, status: Label) -> void:
+    var network = get_node_or_null("/root/SessionNetwork")
+    if network == null:
+        status.text = "NETWORK SERVICE UNAVAILABLE"
+        return
+    var result: int = network.join_session(address.text.strip_edges())
+    status.text = "CONNECTING TO " + address.text if result == OK else "CONNECTION FAILED • ERROR " + str(result)
+
+func _open_settings(layer: CanvasLayer) -> void:
+    if layer.get_node_or_null("SettingsPanel") != null:
+        layer.get_node("SettingsPanel").queue_free()
+        return
+    var panel := PanelContainer.new()
+    panel.name = "SettingsPanel"
+    panel.set_anchors_preset(Control.PRESET_CENTER)
+    panel.position = Vector2(-190, -150)
+    panel.size = Vector2(380, 300)
+    var style := StyleBoxFlat.new()
+    style.bg_color = Color(0.025, 0.055, 0.08, 0.98)
+    style.border_color = Color(0.18, 0.62, 0.88)
+    style.set_border_width_all(2)
+    style.set_corner_radius_all(14)
+    style.content_margin_left = 22
+    style.content_margin_right = 22
+    style.content_margin_top = 18
+    style.content_margin_bottom = 18
+    panel.add_theme_stylebox_override("panel", style)
+    layer.add_child(panel)
+    var stack := VBoxContainer.new()
+    stack.add_theme_constant_override("separation", 14)
+    panel.add_child(stack)
+    var heading := Label.new()
+    heading.text = "GAME SETTINGS"
+    heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    heading.add_theme_font_size_override("font_size", 23)
+    stack.add_child(heading)
+    var quality := OptionButton.new()
+    quality.add_item("LOW • Battery saver", 0)
+    quality.add_item("MEDIUM • Balanced", 1)
+    quality.add_item("HIGH • Visual quality", 2)
+    quality.select(1)
+    quality.item_selected.connect(_apply_quality)
+    stack.add_child(quality)
+    var hint := Label.new()
+    hint.text = "Lower quality reduces lighting and visual effects to help older Android phones."
+    hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    stack.add_child(hint)
+    var close := Button.new()
+    close.text = "CLOSE SETTINGS"
+    close.pressed.connect(panel.queue_free)
+    stack.add_child(close)
+
+func _apply_quality(index: int) -> void:
+    var sun := get_node_or_null("../Sun")
+    if sun is DirectionalLight3D:
+        sun.shadow_enabled = index == 2
+    var environment_node := get_node_or_null("../WorldEnvironment")
+    if environment_node is WorldEnvironment and environment_node.environment:
+        environment_node.environment.glow_enabled = index == 2
+        environment_node.environment.fog_enabled = index != 0
