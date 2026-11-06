@@ -35,7 +35,8 @@ func _respawn() -> void:
 		return
 	if player != null and is_instance_valid(player):
 		player.global_position = spawn_position
-		player.velocity = Vector3.ZERO
+		if player is CharacterBody3D:
+			(player as CharacterBody3D).velocity = Vector3.ZERO
 		player.set_physics_process(true)
 	health = max_health
 	defeated = false
