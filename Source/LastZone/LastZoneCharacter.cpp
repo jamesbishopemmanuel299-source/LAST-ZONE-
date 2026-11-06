@@ -1,5 +1,7 @@
 #include "LastZoneCharacter.h"
 #include "LastZoneArsenalComponent.h"
+#include "LastZoneWeaponVisual.h"
+#include "LastZoneInventoryWidget.h"
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -7,6 +9,7 @@
 #include "Kismet/KismetSystemLibrary.h"
 #include "LastZoneRescueBeacon.h"
 #include "GameFramework/PlayerController.h"
+#include "Blueprint/UserWidget.h"
 
 ALastZoneCharacter::ALastZoneCharacter()
 {
@@ -28,6 +31,37 @@ ALastZoneCharacter::ALastZoneCharacter()
     UCameraComponent* Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
     Camera->SetupAttachment(Arm, USpringArmComponent::SocketName);
     Camera->bUsePawnControlRotation = false;
+}
+
+
+void ALastZoneCharacter::BeginPlay()
+{
+    Super::BeginPlay();
+    if (GetWorld())
+    {
+        FActorSpawnParameters SpawnInfo;
+        SpawnInfo.Owner = this;
+        SpawnInfo.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+        WeaponVisual = GetWorld()->SpawnActor<ALastZoneWeaponVisual>(
+            ALastZoneWeaponVisual::StaticClass(), GetActorTransform(), SpawnInfo);
+        if (WeaponVisual)
+        {
+            WeaponVisual->AttachToComponent(GetMesh(), FAttachmentTransformRules::KeepRelativeTransform);
+            WeaponVisual->SetActorRelativeLocation(FVector(34.f, 24.f, 48.f));
+            WeaponVisual->SetActorRelativeRotation(FRotator(0.f, 0.f, 0.f));
+            WeaponVisual->SetWeaponStyle(ArsenalComponent ? ArsenalComponent->EquippedIndex : 0);
+        }
+    }
+
+    if (APlayerController* PC = Cast<APlayerController>(GetController()))
+    {
+        InventoryWidget = CreateWidget<ULastZoneInventoryWidget>(PC, ULastZoneInventoryWidget::StaticClass());
+        if (InventoryWidget)
+        {
+            InventoryWidget->SetArsenalComponent(ArsenalComponent);
+            InventoryWidget->AddToViewport(20);
+        }
+    }
 }
 
 void ALastZoneCharacter::SetupPlayerInputComponent(UInputComponent* Input)
@@ -126,19 +160,27 @@ void ALastZoneCharacter::Interact()
 void ALastZoneCharacter::FireWeapon()
 {
     if (ArsenalComponent) ArsenalComponent->FireArcadePulse();
+    if (WeaponVisual) WeaponVisual->PlayFireAnimation();
+    if (InventoryWidget) InventoryWidget->RefreshInventory();
 }
 
 void ALastZoneCharacter::ReloadWeapon()
 {
     if (ArsenalComponent) ArsenalComponent->ReloadArcadeWeapon();
+    if (WeaponVisual) WeaponVisual->PlayReloadAnimation();
+    if (InventoryWidget) InventoryWidget->RefreshInventory();
 }
 
 void ALastZoneCharacter::NextWeapon()
 {
     if (ArsenalComponent) ArsenalComponent->EquipNext();
+    if (WeaponVisual) WeaponVisual->SetWeaponStyle(ArsenalComponent ? ArsenalComponent->EquippedIndex : 0);
+    if (InventoryWidget) InventoryWidget->RefreshInventory();
 }
 
 void ALastZoneCharacter::PreviousWeapon()
 {
     if (ArsenalComponent) ArsenalComponent->EquipPrevious();
+    if (WeaponVisual) WeaponVisual->SetWeaponStyle(ArsenalComponent ? ArsenalComponent->EquippedIndex : 0);
+    if (InventoryWidget) InventoryWidget->RefreshInventory();
 }
