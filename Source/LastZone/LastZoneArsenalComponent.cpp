@@ -56,7 +56,6 @@ void ULastZoneArsenalComponent::EquipNext()
     if (Arsenal.Num() < 1) return;
     EquippedIndex = (EquippedIndex + 1) % Arsenal.Num();
     AmmoInMagazine = Arsenal[EquippedIndex].MagazineSize;
-    UGameplayStatics::PlaySound2D(this, nullptr);
 }
 
 void ULastZoneArsenalComponent::EquipPrevious()
