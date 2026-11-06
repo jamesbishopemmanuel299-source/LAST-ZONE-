@@ -42,11 +42,26 @@ jobs:
       - name: Build Linux editor and Android ARM64 GDExtension libraries
         working-directory: Godot
         run: |
+          set -euxo pipefail
           scons platform=linux target=template_release arch=x86_64
+          echo "Linux GDExtension build output:"
+          find bin -maxdepth 1 -type f -name '*.so' -print
+          LINUX_LIB="$(find bin -maxdepth 1 -type f -name 'liblast_zone*.so' ! -name '*android*' | head -n 1)"
+          if [ -z "$LINUX_LIB" ]; then
+            echo "::error::Linux GDExtension library was not produced by SCons."
+            exit 1
+          fi
+          cp "$LINUX_LIB" bin/liblast_zone.linux.template_release.x86_64.so
+          test -s bin/liblast_zone.linux.template_release.x86_64.so
+
           export ANDROID_NDK_ROOT="$ANDROID_HOME/ndk/$ANDROID_NDK_VERSION"
           export ANDROID_NDK_HOME="$ANDROID_HOME/ndk/$ANDROID_NDK_VERSION"
           scons platform=android target=template_debug arch=arm64
           scons platform=android target=template_release arch=arm64
+          echo "All GDExtension libraries:"
+          find bin -maxdepth 1 -type f -name '*.so' -print
+          test -s bin/liblast_zone.android.template_debug.arm64.so
+          test -s bin/liblast_zone.android.template_release.arm64.so
 
       - name: Download Godot editor and export templates
         run: |
