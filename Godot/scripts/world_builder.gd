@@ -13,6 +13,13 @@ var stone_material: StandardMaterial3D
 var beacon_material: StandardMaterial3D
 var performance_label: Label
 var performance_timer := 0.0
+var world_clock := 0.0
+var collected_count := 0
+var collectible_label: Label
+var environment_ref: WorldEnvironment
+var sun_ref: DirectionalLight3D
+var weather_mode := 0
+var map_panel: PanelContainer
 
 func _ready() -> void:
     _make_materials()
@@ -21,7 +28,10 @@ func _ready() -> void:
     _make_landmarks()
     _make_forest()
     _make_beacon()
+    environment_ref = get_node_or_null("WorldEnvironment") as WorldEnvironment
+    sun_ref = get_node_or_null("Sun") as DirectionalLight3D
     _make_hud()
+    _make_exploration_systems()
 
 func _make_materials() -> void:
     grass_material = _mat(Color(0.16, 0.31, 0.19))
@@ -82,7 +92,13 @@ func _make_cabin(at: Vector3, label: String) -> void:
     building.name = label
     add_child(building)
     building.position = at
-    _box(building, "Walls", Vector3(0, 1.6, 0), Vector3(7, 3.2, 6), wall_material, true)
+    _box(building, "BackWall", Vector3(0, 1.6, 2.94), Vector3(7, 3.2, 0.12), wall_material, true)
+    _box(building, "LeftWall", Vector3(-3.44, 1.6, 0), Vector3(0.12, 3.2, 6), wall_material, true)
+    _box(building, "RightWall", Vector3(3.44, 1.6, 0), Vector3(0.12, 3.2, 6), wall_material, true)
+    _box(building, "FrontLeftWall", Vector3(-2.45, 1.6, -2.94), Vector3(2.1, 3.2, 0.12), wall_material, true)
+    _box(building, "FrontRightWall", Vector3(2.45, 1.6, -2.94), Vector3(2.1, 3.2, 0.12), wall_material, true)
+    _box(building, "Floor", Vector3(0, 0.05, 0), Vector3(6.8, 0.12, 5.8), wood_material, true)
+    _box(building, "InteriorDesk", Vector3(0, 0.8, 0.8), Vector3(2.2, 0.15, 0.9), wood_material, true)
     _box(building, "Roof", Vector3(0, 3.45, 0), Vector3(8, 0.55, 7), roof_material, false)
     _box(building, "Door", Vector3(0, 0.95, -3.04), Vector3(1.15, 1.9, 0.12), wood_material, false)
     _box(building, "WindowLeft", Vector3(-2.15, 1.9, -3.08), Vector3(1.0, 0.9, 0.12), beacon_material, false)
@@ -202,6 +218,13 @@ func _make_hud() -> void:
     objective.add_theme_color_override("font_color", Color(0.94, 0.96, 1.0))
     layer.add_child(objective)
 
+    collectible_label = Label.new()
+    collectible_label.text = "DISCOVERIES  0 / 8"
+    collectible_label.position = Vector2(28, 82)
+    collectible_label.add_theme_font_size_override("font_size", 16)
+    collectible_label.add_theme_color_override("font_color", Color(0.5, 0.9, 1.0))
+    layer.add_child(collectible_label)
+
     var controls := Label.new()
     controls.text = "LEFT: MOVE     RIGHT: LOOK     JUMP: UP BUTTON     SPRINT: RUN"
     controls.anchor_left = 0.0
@@ -306,6 +329,12 @@ func _make_menu(layer: CanvasLayer) -> void:
     join_button.custom_minimum_size = Vector2(0, 42)
     join_button.pressed.connect(_join_session.bind(address, lobby_status))
     stack.add_child(join_button)
+
+    var map_button := Button.new()
+    map_button.text = "ISLAND MAP & DISCOVERIES"
+    map_button.custom_minimum_size = Vector2(0, 42)
+    map_button.pressed.connect(_toggle_map.bind(layer))
+    stack.add_child(map_button)
 
     var settings_button := Button.new()
     settings_button.text = "SETTINGS"
@@ -460,17 +489,148 @@ func _open_settings(layer: CanvasLayer) -> void:
     stack.add_child(close)
 
 func _apply_quality(index: int) -> void:
-    var sun := get_node_or_null("../Sun")
+    var sun := get_node_or_null("Sun")
     if sun is DirectionalLight3D:
         sun.shadow_enabled = index == 2
-    var environment_node := get_node_or_null("../WorldEnvironment")
+    var environment_node := get_node_or_null("WorldEnvironment")
     if environment_node is WorldEnvironment and environment_node.environment:
         environment_node.environment.glow_enabled = index == 2
         environment_node.environment.fog_enabled = index != 0
 
 
 func _process(delta: float) -> void:
+    world_clock += delta * 0.003
+    if sun_ref != null:
+        sun_ref.rotation_degrees.x = -28.0 - sin(world_clock) * 35.0
+        sun_ref.light_energy = 0.55 + (0.7 * maxf(0.0, sin(world_clock)))
     performance_timer += delta
     if performance_timer >= 0.5 and is_instance_valid(performance_label):
         performance_timer = 0.0
         performance_label.text = str(Engine.get_frames_per_second()) + " FPS"
+
+# Exploration layer: saved discoveries, map, waypoint guidance and weather.
+func _make_exploration_systems() -> void:
+    _load_progress()
+    var sites := [
+        Vector3(25, 1.1, -18), Vector3(-28, 1.1, 12),
+        Vector3(-78, 1.1, -62), Vector3(-118, 1.1, -70),
+        Vector3(85, 1.1, 62), Vector3(142, 1.1, 154),
+        Vector3(-38, 1.1, -34), Vector3(0, 1.1, -58)
+    ]
+    for i in range(sites.size()):
+        _make_discovery(i, sites[i])
+    _make_weather_button()
+
+func _make_discovery(index: int, at: Vector3) -> void:
+    if _is_discovered(index):
+        return
+    var area := Area3D.new()
+    area.name = "Discovery_" + str(index)
+    area.position = at
+    var orb := MeshInstance3D.new()
+    var mesh := SphereMesh.new()
+    mesh.radius = 0.55
+    mesh.height = 1.1
+    orb.mesh = mesh
+    orb.material_override = _mat(Color(0.25, 0.82, 1.0), true)
+    area.add_child(orb)
+    var collision := CollisionShape3D.new()
+    var shape := SphereShape3D.new()
+    shape.radius = 1.5
+    collision.shape = shape
+    area.add_child(collision)
+    area.body_entered.connect(_on_discovery_entered.bind(index, area))
+    add_child(area)
+
+func _on_discovery_entered(body: Node3D, index: int, area: Area3D) -> void:
+    if body.name != "Player" or _is_discovered(index):
+        return
+    var config := ConfigFile.new()
+    config.load("user://last_zone_save.cfg")
+    config.set_value("discoveries", str(index), true)
+    config.save("user://last_zone_save.cfg")
+    collected_count += 1
+    if is_instance_valid(collectible_label):
+        collectible_label.text = "DISCOVERIES  " + str(collected_count) + " / 8"
+    area.queue_free()
+
+func _is_discovered(index: int) -> bool:
+    var config := ConfigFile.new()
+    config.load("user://last_zone_save.cfg")
+    return bool(config.get_value("discoveries", str(index), false))
+
+func _load_progress() -> void:
+    collected_count = 0
+    var config := ConfigFile.new()
+    config.load("user://last_zone_save.cfg")
+    for i in range(8):
+        if bool(config.get_value("discoveries", str(i), false)):
+            collected_count += 1
+
+func _toggle_map(layer: CanvasLayer) -> void:
+    if is_instance_valid(map_panel):
+        map_panel.queue_free()
+        map_panel = null
+        return
+    map_panel = PanelContainer.new()
+    map_panel.name = "IslandMap"
+    map_panel.set_anchors_preset(Control.PRESET_CENTER)
+    map_panel.position = Vector2(-220, -190)
+    map_panel.size = Vector2(440, 380)
+    var style := StyleBoxFlat.new()
+    style.bg_color = Color(0.025, 0.07, 0.1, 0.98)
+    style.border_color = Color(0.2, 0.7, 0.95)
+    style.set_border_width_all(2)
+    style.set_corner_radius_all(14)
+    style.content_margin_left = 20
+    style.content_margin_right = 20
+    style.content_margin_top = 18
+    style.content_margin_bottom = 18
+    map_panel.add_theme_stylebox_override("panel", style)
+    layer.add_child(map_panel)
+    var stack := VBoxContainer.new()
+    map_panel.add_child(stack)
+    var title := Label.new()
+    title.text = "ISLAND FIELD GUIDE"
+    title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    title.add_theme_font_size_override("font_size", 23)
+    stack.add_child(title)
+    var guide := Label.new()
+    guide.text = "NORTH  •  Signal Beacon & Lookout Tower\nWEST  •  Visitor Centre & Research Hall\nEAST  •  Harbor Village & Pier\nSOUTH  •  Coastal Trail & Forest\n\nDiscoveries: " + str(collected_count) + " / 8\nProgress saves automatically on this device."
+    guide.add_theme_font_size_override("font_size", 16)
+    guide.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    stack.add_child(guide)
+    var close := Button.new()
+    close.text = "CLOSE MAP"
+    close.pressed.connect(func():
+        map_panel.queue_free()
+        map_panel = null
+    )
+    stack.add_child(close)
+
+func _make_weather_button() -> void:
+    var layer := get_node_or_null("ExpeditionHUD") as CanvasLayer
+    if layer == null:
+        return
+    var button := Button.new()
+    button.text = "WEATHER: CLEAR"
+    button.position = Vector2(28, 112)
+    button.custom_minimum_size = Vector2(170, 38)
+    button.pressed.connect(func():
+        weather_mode = (weather_mode + 1) % 3
+        if weather_mode == 0:
+            button.text = "WEATHER: CLEAR"
+            if environment_ref and environment_ref.environment:
+                environment_ref.environment.fog_enabled = true
+                environment_ref.environment.fog_density = 0.003
+        elif weather_mode == 1:
+            button.text = "WEATHER: MIST"
+            if environment_ref and environment_ref.environment:
+                environment_ref.environment.fog_enabled = true
+                environment_ref.environment.fog_density = 0.012
+        else:
+            button.text = "WEATHER: CLEAR AIR"
+            if environment_ref and environment_ref.environment:
+                environment_ref.environment.fog_enabled = false
+    )
+    layer.add_child(button)
