@@ -58,7 +58,7 @@ void ULastZoneInventoryWidget::RefreshInventory()
     const int32 Count = Arsenal->Arsenal.Num();
     for (int32 Slot = 0; Slot < SlotLabels.Num(); ++Slot)
     {
-        const int32 WeaponIndex = Slot;
+        const int32 WeaponIndex = Count > 0 ? (Arsenal->EquippedIndex + Slot) % Count : INDEX_NONE;
         if (Arsenal->Arsenal.IsValidIndex(WeaponIndex))
         {
             const FLastZoneWeaponData& Weapon = Arsenal->Arsenal[WeaponIndex];
@@ -80,6 +80,6 @@ void ULastZoneInventoryWidget::RefreshInventory()
 void ULastZoneInventoryWidget::EquipSlot(int32 SlotIndex)
 {
     if (!Arsenal || !Arsenal->Arsenal.IsValidIndex(SlotIndex)) return;
-    while (Arsenal->EquippedIndex != SlotIndex) Arsenal->EquipNext();
+    const int32 Count = Arsenal->Arsenal.Num();\n    if (Count < 1) return;\n    const int32 TargetIndex = (Arsenal->EquippedIndex + SlotIndex) % Count;\n    while (Arsenal->EquippedIndex != TargetIndex) Arsenal->EquipNext();
     RefreshInventory();
 }
