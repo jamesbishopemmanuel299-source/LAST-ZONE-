@@ -1,41 +1,24 @@
-# LAST-ZONE — Godot C++ Android prototype
+# LAST-ZONE — Android-first C++ exploration prototype
 
-This folder is the Android-first Godot prototype. The existing Unreal Engine project remains in the repository root and is not overwritten.
+The Godot project is the phone-first playable path. The Unreal Engine C++ project remains in the repository root.
 
-## Engine and target
-- Godot 4.4+ (GDExtension API)
-- C++17 via godot-cpp
-- Android ARM64
-- Third-person exploration prototype
-- Mobile renderer with a scalable 3D scene
+## Current prototype upgrade
+- Camera-relative third-person movement, jump and hold-to-sprint.
+- Touch movement pad, jump and sprint controls; drag the right side to look around.
+- Procedurally generated island scenery: ranger cabins, lookout tower, forest, rocks, marked trails and a glowing navigation beacon.
+- On-screen objective and control HUD.
+- Godot Mobile renderer, atmospheric fog and a bounded shadow distance to keep the scene suitable for Android.
 
-## Included
-- C++ third-person character movement and gravity
-- Camera-relative movement
-- Right-side touch-drag camera look
-- On-screen touch movement and jump buttons
-- A 3D test island, player capsule, lighting and collision
+## Run and build
+1. Build the Android ARM64 GDExtension with the GitHub Actions workflow.
+2. Download and extract the debug/release libraries from the `last-zone-android-arm64` artifact into `Godot/bin/`.
+3. Open `Godot/project.godot` in Godot 4.4 or newer and run the project.
+4. To export an APK, install the matching Godot export templates, configure an Android ARM64 export preset, and export a debug APK.
 
-## Build the Android C++ extension
+The workflow compiles the C++ extension only; it does not itself export a complete APK. For an Android-only workflow, use Godot Editor for Android and its documented Android export setup.
 
-The C++ extension must be compiled for Android before the project can load it on an Android device.
+## Performance notes
+The island is built from primitive meshes and does not require large downloaded assets. Keep shadows limited, avoid expensive transparent effects, and profile on the target phone before increasing scene density. Godot recommends choosing the Mobile renderer for newer mobile GPUs and Compatibility for older devices that need broader support.
 
-1. Push this folder to GitHub.
-2. Open the repository Actions tab.
-3. Run or wait for the workflow named Build LAST-ZONE Godot Android Extension.
-4. Download the artifact named last-zone-android-arm64.
-5. Extract both .so files into this folder's bin/ directory.
-6. Open Godot/project.godot with Godot Editor for Android.
-
-The workflow builds debug and release ARM64 libraries using the Godot 4.4 godot-cpp bindings. The extension API compatibility minimum is 4.4.
-
-## Export an APK on Android
-
-Install Godot's Android export templates in the editor, create an Android export preset, select ARM64, and export a debug APK for device testing. If using the Gradle export path, install the Godot Android Build Environment (GABE) companion app. GABE handles Gradle export dependencies; it does not compile this C++ extension.
-
-## Limitations
-
-- This is a playable movement/environment foundation, not a finished game.
-- The scene uses placeholder geometry; cinematic assets and detailed island terrain are later work.
-- The Android C++ library is a separate build artifact. A successful GitHub Actions build is not the same as a complete APK export.
-- The Unreal project in the repository root is preserved.
+## Scope
+This is an exploration and navigation prototype. It does not yet include finished art assets, save data, or a production online matchmaking service.
