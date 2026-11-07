@@ -226,10 +226,29 @@ func _make_forest() -> void:
 func _make_ground_cover() -> void:
     var rng := RandomNumberGenerator.new()
     rng.seed = 20261107
-    var blade_material := StandardMaterial3D.new()
-    blade_material.albedo_color = Color(0.22, 0.38, 0.19)
-    blade_material.roughness = 1.0
-    blade_material.cull_mode = BaseMaterial3D.CULL_DISABLED
+    # Shared shader animates each grass blade gently in the island breeze.
+    var blade_shader := Shader.new()
+    blade_shader.code = """
+shader_type spatial;
+render_mode cull_disabled, diffuse_burley;
+uniform vec3 grass_base : source_color = vec3(0.10, 0.23, 0.11);
+uniform vec3 grass_tip : source_color = vec3(0.34, 0.48, 0.20);
+uniform float wind_strength = 0.13;
+void vertex() {
+    float height_mask = clamp(UV.y, 0.0, 1.0);
+    float phase = MODEL_MATRIX[3].x * 0.11 + MODEL_MATRIX[3].z * 0.09;
+    float sway = sin(TIME * 1.65 + phase + VERTEX.y * 1.8);
+    VERTEX.x += sway * wind_strength * height_mask;
+    VERTEX.z += cos(TIME * 1.2 + phase) * wind_strength * 0.45 * height_mask;
+}
+void fragment() {
+    float tip = smoothstep(0.05, 0.95, UV.y);
+    ALBEDO = mix(grass_base, grass_tip, tip);
+    ROUGHNESS = 0.96;
+}
+"""
+    var blade_material := ShaderMaterial.new()
+    blade_material.shader = blade_shader
     var blade_mesh := PrismMesh.new()
     blade_mesh.size = Vector3(0.16, 0.72, 0.12)
     blade_mesh.material = blade_material
