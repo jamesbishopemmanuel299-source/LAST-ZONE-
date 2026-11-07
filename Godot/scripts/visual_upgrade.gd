@@ -51,6 +51,14 @@ func _upgrade_environment() -> void:
     env.fog_light_color = Color(0.38, 0.48, 0.58)
     env.fog_density = 0.0018
     env.fog_sky_affect = 0.35
+    env.ssr_enabled = true
+    env.ssr_max_steps = 48
+    env.ssr_fade_in = 0.12
+    env.ssr_fade_out = 1.0
+    env.ssao_enabled = true
+    env.ssao_radius = 2.0
+    env.ssao_intensity = 1.15
+    env.ssao_power = 1.25
 
 func _upgrade_sun() -> void:
     var sun := get_node_or_null("Sun") as DirectionalLight3D
@@ -89,6 +97,22 @@ func _upgrade_ground() -> void:
     terrain_texture.seamless = true
     ground_mat.albedo_texture = terrain_texture
     ground_mat.uv1_scale = Vector3(26.0, 26.0, 1.0)
+    ground_mat.uv1_triplanar = true
+    var terrain_normal_noise := FastNoiseLite.new()
+    terrain_normal_noise.seed = 982
+    terrain_normal_noise.noise_type = FastNoiseLite.TYPE_SIMPLEX
+    terrain_normal_noise.frequency = 0.075
+    terrain_normal_noise.fractal_octaves = 3
+    var terrain_normal := NoiseTexture2D.new()
+    terrain_normal.noise = terrain_normal_noise
+    terrain_normal.width = 512
+    terrain_normal.height = 512
+    terrain_normal.seamless = true
+    terrain_normal.as_normal_map = true
+    terrain_normal.bump_strength = 0.22
+    ground_mat.normal_enabled = true
+    ground_mat.normal_texture = terrain_normal
+    ground_mat.normal_scale = 0.42
     ground_mesh.material_override = ground_mat
 
 func _add_weather() -> void:
