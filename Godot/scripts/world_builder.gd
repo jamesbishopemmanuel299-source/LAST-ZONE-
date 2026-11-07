@@ -30,6 +30,8 @@ var vehicle_type := ""
 var battle_timer := 0.0
 var safe_zone_radius := 175.0
 var safe_zone_mesh: MeshInstance3D
+var battle_status_label: Label
+var match_active := false
 
 func _ready() -> void:
     _make_materials()
@@ -41,6 +43,9 @@ func _ready() -> void:
     _make_beacon()
     environment_ref = get_node_or_null("WorldEnvironment") as WorldEnvironment
     sun_ref = get_node_or_null("Sun") as DirectionalLight3D
+    var saved_settings := ConfigFile.new()
+    saved_settings.load("user://last_zone_settings.cfg")
+    _apply_quality(clampi(int(saved_settings.get_value("graphics", "quality", 1)), 0, 2))
     _make_hud()
     _make_exploration_systems()
     _make_interactables()
@@ -276,6 +281,13 @@ func _make_hud() -> void:
     collectible_label.add_theme_font_size_override("font_size", 16)
     collectible_label.add_theme_color_override("font_color", Color(0.5, 0.9, 1.0))
     layer.add_child(collectible_label)
+
+    battle_status_label = Label.new()
+    battle_status_label.name = "BattleStatus"
+    battle_status_label.position = Vector2(28, 110)
+    battle_status_label.add_theme_font_size_override("font_size", 15)
+    battle_status_label.add_theme_color_override("font_color", Color(0.35, 0.82, 1.0))
+    layer.add_child(battle_status_label)
 
     var controls := Label.new()
     controls.text = "LEFT: MOVE     RIGHT: LOOK     JUMP: UP BUTTON     SPRINT: RUN"
@@ -561,6 +573,12 @@ func _process(delta: float) -> void:
     if performance_timer >= 0.5 and is_instance_valid(performance_label):
         performance_timer = 0.0
         performance_label.text = str(Engine.get_frames_per_second()) + " FPS"
+    if is_instance_valid(battle_status_label):
+        if match_active:
+            var remaining := maxf(0.0, 25.0 - battle_timer)
+            battle_status_label.text = "SAFE ZONE  •  %dm  •  %s" % [int(safe_zone_radius), ("SHRINKING IN %ds" % int(remaining)) if remaining > 0.0 else "ZONE CLOSING"]
+        else:
+            battle_status_label.text = "PRACTICE ISLAND  •  MATCH NOT STARTED"
 
 # Exploration layer: saved discoveries, map, waypoint guidance and weather.
 func _make_exploration_systems() -> void:
@@ -947,6 +965,8 @@ func _make_safe_zone() -> void:
     safe_zone_mesh = ring
 
 func _update_battle_zone(delta: float) -> void:
+    if not match_active:
+        return
     battle_timer += delta
     if battle_timer > 25.0 and safe_zone_radius > 42.0:
         safe_zone_radius = maxf(42.0, safe_zone_radius - delta * 0.72)
@@ -958,6 +978,13 @@ func _update_battle_zone(delta: float) -> void:
 # Spawn exactly the bot count selected in the match lobby.
 func configure_bots(requested_count: int) -> void:
     var bot_count := clampi(requested_count, 1, 20)
+    match_active = true
+    battle_timer = 0.0
+    safe_zone_radius = 175.0
+    if is_instance_valid(safe_zone_mesh):
+        var zone_mesh := safe_zone_mesh.mesh as TorusMesh
+        zone_mesh.inner_radius = safe_zone_radius - 0.65
+        zone_mesh.outer_radius = safe_zone_radius
     for existing in get_tree().get_nodes_in_group("match_bots"):
         if is_instance_valid(existing):
             existing.queue_free()
