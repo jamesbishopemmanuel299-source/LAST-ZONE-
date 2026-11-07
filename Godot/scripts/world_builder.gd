@@ -299,7 +299,7 @@ func _make_menu(layer: CanvasLayer) -> void:
     stack.add_child(start_button)
 
     var info := Label.new()
-    info.text = "Explore the island, find the ranger cabins,\nand reach the glowing signal beacon.\n\nOnline matchmaking is not connected yet."
+    info.text = "Explore the island with friends.\n\nWI-FI LAN MULTIPLAYER\nBoth phones must use the same Wi-Fi network.\nThe host shares the IP address shown below."
     info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     info.add_theme_font_size_override("font_size", 14)
     info.add_theme_color_override("font_color", Color(0.78, 0.85, 0.91))
@@ -314,19 +314,19 @@ func _make_menu(layer: CanvasLayer) -> void:
     stack.add_child(lobby_status)
 
     var host_button := Button.new()
-    host_button.text = "HOST PRIVATE SESSION"
+    host_button.text = "HOST WI-FI GAME"
     host_button.custom_minimum_size = Vector2(0, 42)
     host_button.pressed.connect(_host_session.bind(lobby_status))
     stack.add_child(host_button)
 
     var address := LineEdit.new()
     address.name = "ServerAddress"
-    address.placeholder_text = "Host address (e.g. 127.0.0.1)"
-    address.text = "127.0.0.1"
+    address.placeholder_text = "Enter host Wi-Fi IP address"
+    address.text = ""
     stack.add_child(address)
 
     var join_button := Button.new()
-    join_button.text = "JOIN SESSION"
+    join_button.text = "JOIN WI-FI GAME"
     join_button.custom_minimum_size = Vector2(0, 42)
     join_button.pressed.connect(_join_session.bind(address, lobby_status))
     stack.add_child(join_button)
@@ -435,7 +435,7 @@ func _host_session(status: Label) -> void:
         status.text = "NETWORK SERVICE UNAVAILABLE"
         return
     var result: int = network.host_session()
-    status.text = "SESSION CREATED • PORT 7777" if result == OK else "HOST FAILED • ERROR " + str(result)
+    status.text = "WI-FI HOST READY • " + network.get_local_ipv4() + ":7777" if result == OK else "HOST FAILED • ERROR " + str(result)
 
 func _join_session(address: LineEdit, status: Label) -> void:
     var network = get_node_or_null("/root/SessionNetwork")
@@ -443,7 +443,7 @@ func _join_session(address: LineEdit, status: Label) -> void:
         status.text = "NETWORK SERVICE UNAVAILABLE"
         return
     var result: int = network.join_session(address.text.strip_edges())
-    status.text = "CONNECTING TO " + address.text if result == OK else "CONNECTION FAILED • ERROR " + str(result)
+    status.text = "CONNECTING OVER WI-FI TO " + address.text if result == OK else "CONNECTION FAILED • ERROR " + str(result)
 
 func _open_settings(layer: CanvasLayer) -> void:
     if layer.get_node_or_null("SettingsPanel") != null:
