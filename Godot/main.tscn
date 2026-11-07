@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="Texture2D" path="res://assets/touch_arrow.svg" id="1_arrow"]
 [ext_resource type="Script" path="res://scripts/world_builder.gd" id="2_world"]
@@ -6,6 +6,7 @@
 [ext_resource type="Script" path="res://scripts/fps_combat.gd" id="4_combat"]
 [ext_resource type="Script" path="res://scripts/player_health.gd" id="5_health"]
 [ext_resource type="Script" path="res://scripts/game_frontend.gd" id="6_frontend"]
+[ext_resource type="Script" path="res://scripts/visual_upgrade.gd" id="7_visual"]
 
 [sub_resource type="Environment" id="Environment_world"]
 background_mode = 1
@@ -139,3 +140,6 @@ visibility_mode = 1
 [node name="Frontend" type="CanvasLayer" parent="."]
 script = ExtResource("6_frontend")
 layer = 10
+
+[node name="VisualUpgrade" type="Node3D" parent="."]
+script = ExtResource("7_visual")
