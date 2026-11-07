@@ -862,6 +862,8 @@ func _use_interaction() -> void:
             player.global_position = active_vehicle.global_position + Vector3(2.5, 0.95, 0)
             player.call("set_vehicle_mode", false)
             var exit_area := active_vehicle.get_node_or_null("VehicleInteraction") as Area3D
+            if exit_area == null:
+                exit_area = active_vehicle.get_node_or_null("MotorcycleInteraction") as Area3D
             if exit_area != null:
                 exit_area.set_meta("prompt", "DRIVE " + vehicle_type.to_upper())
                 exit_area.set_meta("action", "car_enter" if vehicle_type == "car" else "bike_enter")
