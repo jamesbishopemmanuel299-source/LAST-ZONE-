@@ -130,7 +130,7 @@ func _make_tree(at: Vector3, scale_factor: float = 1.0) -> void:
     tree.add_child(trunk)
 
     var crown := MeshInstance3D.new()
-    var crown_mesh := ConeMesh.new()
+    var crown_mesh := CylinderMesh.new()
     crown_mesh.top_radius = 0.0
     crown_mesh.bottom_radius = 2.0
     crown_mesh.height = 4.3
