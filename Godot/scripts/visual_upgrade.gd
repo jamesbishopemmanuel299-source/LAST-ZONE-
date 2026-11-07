@@ -13,6 +13,7 @@ func _apply_visual_upgrade() -> void:
     _upgrade_sun()
     _upgrade_ground()
     _add_weather()
+    _add_fire_effect()
     _add_environmental_detail()
     _apply_quality(quality)
 
@@ -188,3 +189,45 @@ func _apply_quality(level: int) -> void:
     if smoke_particles:
         smoke_particles.amount = 34 if level >= 1 else 12
         smoke_particles.emitting = true
+
+func _add_fire_effect() -> void:
+    var fire := GPUParticles3D.new()
+    fire.name = "DistantFireGlow"
+    fire.amount = 26
+    fire.lifetime = 1.1
+    fire.explosiveness = 0.0
+    fire.visibility_aabb = AABB(Vector3(-8, -2, -8), Vector3(16, 14, 16))
+    var process := ParticleProcessMaterial.new()
+    process.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
+    process.emission_box_extents = Vector3(1.1, 0.15, 1.1)
+    process.direction = Vector3(0.0, 1.0, 0.0)
+    process.spread = 24.0
+    process.initial_velocity_min = 0.6
+    process.initial_velocity_max = 2.2
+    process.gravity = Vector3(0.0, -0.25, 0.0)
+    process.scale_min = 0.16
+    process.scale_max = 0.48
+    process.color = Color(1.0, 0.36, 0.08, 0.78)
+    fire.process_material = process
+    var flame_mesh := SphereMesh.new()
+    flame_mesh.radius = 0.28
+    flame_mesh.height = 0.56
+    var flame_material := StandardMaterial3D.new()
+    flame_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    flame_material.albedo_color = Color(1.0, 0.42, 0.12, 0.78)
+    flame_material.emission_enabled = true
+    flame_material.emission = Color(1.0, 0.22, 0.035)
+    flame_material.emission_energy_multiplier = 2.0
+    flame_mesh.material = flame_material
+    fire.draw_pass_1 = flame_mesh
+    fire.position = Vector3(-18, 0.2, -24)
+    add_child(fire)
+    fire.emitting = true
+    var glow := OmniLight3D.new()
+    glow.name = "FireBounceLight"
+    glow.position = Vector3(-18, 1.2, -24)
+    glow.light_color = Color(1.0, 0.32, 0.1)
+    glow.light_energy = 1.5
+    glow.omni_range = 11.0
+    glow.shadow_enabled = false
+    add_child(glow)
