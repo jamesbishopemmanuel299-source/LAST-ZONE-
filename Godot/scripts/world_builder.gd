@@ -25,6 +25,11 @@ var interaction_hint: Label
 var interaction_button: Button
 var riding_bike := false
 var bike_root: Node3D
+var active_vehicle: Node3D
+var vehicle_type := ""
+var battle_timer := 0.0
+var safe_zone_radius := 175.0
+var safe_zone_mesh: MeshInstance3D
 
 func _ready() -> void:
     _make_materials()
@@ -547,6 +552,8 @@ func _apply_quality(index: int) -> void:
 
 func _process(delta: float) -> void:
     world_clock += delta * 0.003
+    _update_vehicle(delta)
+    _update_battle_zone(delta)
     if sun_ref != null:
         sun_ref.rotation_degrees.x = -28.0 - sin(world_clock) * 35.0
         sun_ref.light_energy = 0.55 + (0.7 * maxf(0.0, sin(world_clock)))
@@ -723,6 +730,9 @@ func _make_interactables() -> void:
     _add_interaction_area("HOUSE_ENTRY", Vector3(25, 1.0, -22.0), Vector3(3.8, 2.5, 2.2), "ENTER HOUSE", "house_enter")
     _add_interaction_area("HOUSE_EXIT", Vector3(25, 1.0, -16.0), Vector3(3.8, 2.5, 2.2), "EXIT HOUSE", "house_exit")
     _make_motorcycle(Vector3(7, 0.0, 5.0))
+    _make_car(Vector3(18, 0.0, 8.0), "BlueRidge SUV", Color(0.08, 0.28, 0.72))
+    _make_car(Vector3(108, 0.0, 52.0), "Harbor Utility", Color(0.72, 0.34, 0.08))
+    _make_safe_zone()
 
 func _add_interaction_area(label: String, at: Vector3, dimensions: Vector3, prompt: String, action: String) -> void:
     var area := Area3D.new()
@@ -836,22 +846,112 @@ func _use_interaction() -> void:
             player.global_position = Vector3(25, 0.95, -20.0)
         "house_exit":
             player.global_position = Vector3(25, 0.95, -24.8)
-        "bike_enter":
-            if riding_bike:
+        "bike_enter", "car_enter":
+            if active_vehicle != null:
                 return
-            riding_bike = true
-            player.global_position = bike_root.global_position + Vector3(0, 0.95, 0)
+            active_vehicle = bike_root if action == "bike_enter" else nearby_interaction.get_parent()
+            vehicle_type = "motorcycle" if action == "bike_enter" else "car"
+            riding_bike = action == "bike_enter"
+            player.global_position = active_vehicle.global_position + Vector3(0, 0.95, 0)
             player.call("set_vehicle_mode", true)
-            nearby_interaction.set_meta("prompt", "LEAVE MOTORCYCLE")
-            nearby_interaction.set_meta("action", "bike_exit")
-        "bike_exit":
-            riding_bike = false
-            player.global_position = bike_root.global_position + Vector3(2.0, 0.95, 0)
+            nearby_interaction.set_meta("prompt", "EXIT " + vehicle_type.to_upper())
+            nearby_interaction.set_meta("action", "vehicle_exit")
+        "vehicle_exit":
+            if active_vehicle == null:
+                return
+            player.global_position = active_vehicle.global_position + Vector3(2.5, 0.95, 0)
             player.call("set_vehicle_mode", false)
-            nearby_interaction.set_meta("prompt", "RIDE MOTORCYCLE")
-            nearby_interaction.set_meta("action", "bike_enter")
+            var exit_area := active_vehicle.get_node_or_null("VehicleInteraction") as Area3D
+            if exit_area != null:
+                exit_area.set_meta("prompt", "DRIVE " + vehicle_type.to_upper())
+                exit_area.set_meta("action", "car_enter" if vehicle_type == "car" else "bike_enter")
+            active_vehicle = null
+            vehicle_type = ""
+            riding_bike = false
     _refresh_interaction_prompt()
 
+
+func _make_car(at: Vector3, car_name: String, paint_color: Color) -> void:
+    var car := Node3D.new()
+    car.name = car_name.replace(" ", "")
+    car.position = at
+    add_child(car)
+    var paint := _mat(paint_color, false)
+    var glass := _mat(Color(0.08, 0.19, 0.24))
+    var rubber := _mat(Color(0.018, 0.02, 0.025))
+    var metal := _mat(Color(0.48, 0.52, 0.56))
+    _vehicle_box(car, "Chassis", Vector3(0, 0.85, 0), Vector3(2.25, 0.62, 4.0), paint)
+    _vehicle_box(car, "Cabin", Vector3(0, 1.55, 0.15), Vector3(1.85, 0.95, 2.05), paint)
+    _vehicle_box(car, "Windshield", Vector3(0, 1.58, -0.91), Vector3(1.55, 0.66, 0.08), glass)
+    _vehicle_box(car, "RearWindow", Vector3(0, 1.58, 1.2), Vector3(1.45, 0.62, 0.08), glass)
+    _vehicle_box(car, "FrontBumper", Vector3(0, 0.62, -2.08), Vector3(2.15, 0.24, 0.18), metal)
+    _vehicle_box(car, "RearBumper", Vector3(0, 0.62, 2.08), Vector3(2.15, 0.24, 0.18), metal)
+    for side in [-1.0, 1.0]:
+        for z in [-1.35, 1.35]:
+            var wheel := MeshInstance3D.new()
+            var wheel_mesh := CylinderMesh.new()
+            wheel_mesh.top_radius = 0.48
+            wheel_mesh.bottom_radius = 0.48
+            wheel_mesh.height = 0.28
+            wheel.mesh = wheel_mesh
+            wheel.material_override = rubber
+            wheel.rotation_degrees.z = 90
+            wheel.position = Vector3(side * 1.12, 0.52, z)
+            car.add_child(wheel)
+    var area := Area3D.new()
+    area.name = "VehicleInteraction"
+    area.position = Vector3(0, 1.0, 0)
+    area.set_meta("prompt", "DRIVE CAR")
+    area.set_meta("action", "car_enter")
+    var collision := CollisionShape3D.new()
+    var sphere := SphereShape3D.new()
+    sphere.radius = 3.8
+    collision.shape = sphere
+    area.add_child(collision)
+    area.body_entered.connect(_on_interaction_entered.bind(area))
+    area.body_exited.connect(_on_interaction_exited.bind(area))
+    car.add_child(area)
+
+func _vehicle_box(parent: Node3D, label: String, at: Vector3, dimensions: Vector3, material: Material) -> void:
+    var mesh_instance := MeshInstance3D.new()
+    mesh_instance.name = label
+    var mesh := BoxMesh.new()
+    mesh.size = dimensions
+    mesh_instance.mesh = mesh
+    mesh_instance.material_override = material
+    mesh_instance.position = at
+    parent.add_child(mesh_instance)
+
+func _update_vehicle(_delta: float) -> void:
+    if active_vehicle == null or not is_instance_valid(active_vehicle):
+        active_vehicle = null
+        return
+    var player := get_node_or_null("Player") as CharacterBody3D
+    if player == null:
+        return
+    active_vehicle.global_position = player.global_position + Vector3(0, -0.72, 0)
+    active_vehicle.global_rotation.y = player.global_rotation.y
+
+func _make_safe_zone() -> void:
+    var ring := MeshInstance3D.new()
+    ring.name = "BattleZoneBoundary"
+    var torus := TorusMesh.new()
+    torus.inner_radius = safe_zone_radius - 0.65
+    torus.outer_radius = safe_zone_radius
+    ring.mesh = torus
+    ring.material_override = _mat(Color(0.12, 0.62, 1.0), true)
+    ring.position.y = 0.18
+    add_child(ring)
+    safe_zone_mesh = ring
+
+func _update_battle_zone(delta: float) -> void:
+    battle_timer += delta
+    if battle_timer > 25.0 and safe_zone_radius > 42.0:
+        safe_zone_radius = maxf(42.0, safe_zone_radius - delta * 0.72)
+        if is_instance_valid(safe_zone_mesh):
+            var torus := safe_zone_mesh.mesh as TorusMesh
+            torus.inner_radius = safe_zone_radius - 0.65
+            torus.outer_radius = safe_zone_radius
 
 # Spawn exactly the bot count selected in the match lobby.
 func configure_bots(requested_count: int) -> void:
