@@ -178,12 +178,7 @@ func _show_main() -> void:
     avatar_stack.alignment = BoxContainer.ALIGNMENT_CENTER
     avatar_stack.add_theme_constant_override("separation", 4)
     avatar.add_child(avatar_stack)
-    var silhouette := Label.new()
-    silhouette.text = "◉"
-    silhouette.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-    silhouette.add_theme_font_size_override("font_size", 70)
-    silhouette.add_theme_color_override("font_color", Color(0.72, 0.76, 0.80))
-    avatar_stack.add_child(silhouette)
+    _make_avatar_preview(avatar_stack)
     var outfit_label := Label.new()
     outfit_label.text = outfits[selected_outfit]
     outfit_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -205,6 +200,43 @@ func _show_main() -> void:
     _button("PROFILE & PLAYER STATS", _show_profile)
     _button("SETTINGS", _show_settings)
     _label("DAILY BONUS   •   COMPLETE MISSIONS TO EARN XP", 10, MUTED, true)
+
+func _make_avatar_preview(parent: VBoxContainer) -> void:
+    var preview_box := SubViewportContainer.new()
+    preview_box.custom_minimum_size = Vector2(0, 132)
+    preview_box.stretch = true
+    preview_box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    parent.add_child(preview_box)
+    var viewport := SubViewport.new()
+    viewport.size = Vector2i(320, 220)
+    viewport.transparent_bg = true
+    viewport.world_3d = World3D.new()
+    viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+    preview_box.add_child(viewport)
+    var stage := Node3D.new()
+    viewport.add_child(stage)
+    var avatar := MeshInstance3D.new()
+    avatar.name = "LobbyCharacterPreview"
+    avatar.set_script(load("res://scripts/character_visual.gd"))
+    stage.add_child(avatar)
+    var camera := Camera3D.new()
+    camera.position = Vector3(0, 1.12, 4.8)
+    camera.look_at(Vector3(0, 1.05, 0), Vector3.UP)
+    camera.fov = 38.0
+    stage.add_child(camera)
+    camera.current = true
+    var key_light := DirectionalLight3D.new()
+    key_light.rotation_degrees = Vector3(-28, -25, 0)
+    key_light.light_energy = 1.35
+    key_light.shadow_enabled = false
+    stage.add_child(key_light)
+    var fill_light := OmniLight3D.new()
+    fill_light.position = Vector3(2.0, 1.5, 2.0)
+    fill_light.light_color = CYAN
+    fill_light.light_energy = 0.7
+    fill_light.omni_range = 7.0
+    fill_light.shadow_enabled = false
+    stage.add_child(fill_light)
 
 func _small_nav(parent: HBoxContainer, caption: String, callback: Callable) -> void:
     var b := Button.new()
