@@ -9,6 +9,11 @@
 using namespace godot;
 
 void LastZonePlayer::_bind_methods() {
+    ClassDB::bind_method(D_METHOD("set_vehicle_mode", "enabled"), &LastZonePlayer::set_vehicle_mode);
+}
+
+void LastZonePlayer::set_vehicle_mode(bool enabled) {
+    vehicle_mode = enabled;
 }
 
 void LastZonePlayer::_ready() {
@@ -56,9 +61,10 @@ void LastZonePlayer::_physics_process(double delta) {
         }
     }
 
+    const double base_speed = vehicle_mode ? move_speed * 2.35 : move_speed;
     const double active_speed = input->is_action_pressed("sprint")
-        ? move_speed * 1.55
-        : move_speed;
+        ? base_speed * 1.25
+        : base_speed;
     current_velocity.x = direction.x * active_speed;
     current_velocity.z = direction.z * active_speed;
 
