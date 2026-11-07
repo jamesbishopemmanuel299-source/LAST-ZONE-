@@ -22,6 +22,9 @@ var fire_button: Button
 var reload_button: Button
 var aim_button: Button
 var weapon_root: Node3D
+var hit_marker: Label
+var damage_overlay: ColorRect
+var muzzle_light: OmniLight3D
 
 func _ready() -> void:
     ammo = magazine_size
@@ -32,6 +35,8 @@ func _ready() -> void:
     if visual != null:
         visual.hide()
     player_health = get_parent().get_node_or_null("PlayerHealth")
+    if player_health != null and player_health.has_signal("health_changed"):
+        player_health.health_changed.connect(_on_health_changed)
     _setup_input()
     _build_weapon()
     _build_hud()
@@ -80,6 +85,29 @@ func _build_weapon() -> void:
     sight.position = Vector3(0, 0.12, -0.08)
     sight.material_override = _mat(Color(0.1, 0.72, 0.95), 0.2)
     weapon_root.add_child(sight)
+    var grip := MeshInstance3D.new()
+    var grip_mesh := BoxMesh.new()
+    grip_mesh.size = Vector3(0.11, 0.22, 0.14)
+    grip.mesh = grip_mesh
+    grip.position = Vector3(0, -0.16, -0.02)
+    grip.rotation.x = -0.18
+    grip.material_override = _mat(Color(0.055, 0.065, 0.07), 0.05)
+    weapon_root.add_child(grip)
+    var magazine := MeshInstance3D.new()
+    var magazine_mesh := BoxMesh.new()
+    magazine_mesh.size = Vector3(0.12, 0.28, 0.17)
+    magazine.mesh = magazine_mesh
+    magazine.position = Vector3(0, -0.2, 0.18)
+    magazine.rotation.x = -0.18
+    magazine.material_override = _mat(Color(0.12, 0.15, 0.13), 0.18)
+    weapon_root.add_child(magazine)
+    muzzle_light = OmniLight3D.new()
+    muzzle_light.position = Vector3(0, 0.015, -0.72)
+    muzzle_light.light_color = Color(1.0, 0.68, 0.28)
+    muzzle_light.light_energy = 0.0
+    muzzle_light.omni_range = 3.2
+    muzzle_light.shadow_enabled = false
+    weapon_root.add_child(muzzle_light)
 
 func _mat(color: Color, metal: float) -> StandardMaterial3D:
     var material := StandardMaterial3D.new()
@@ -99,6 +127,19 @@ func _build_hud() -> void:
     crosshair.add_theme_font_size_override("font_size", 30)
     crosshair.add_theme_color_override("font_color", Color(0.45, 0.92, 1.0))
     layer.add_child(crosshair)
+    hit_marker = Label.new()
+    hit_marker.text = "×"
+    hit_marker.set_anchors_preset(Control.PRESET_CENTER)
+    hit_marker.position = Vector2(-12, -25)
+    hit_marker.add_theme_font_size_override("font_size", 42)
+    hit_marker.add_theme_color_override("font_color", Color(1.0, 0.22, 0.2, 0.0))
+    layer.add_child(hit_marker)
+    damage_overlay = ColorRect.new()
+    damage_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    damage_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    damage_overlay.color = Color(0.8, 0.015, 0.025, 0.0)
+    layer.add_child(damage_overlay)
+    damage_overlay.show_behind_parent = true
     ammo_label = Label.new()
     ammo_label.position = Vector2(26, 118)
     ammo_label.add_theme_font_size_override("font_size", 20)
@@ -180,6 +221,10 @@ func _fire() -> void:
         return
     ammo -= 1
     fire_timer = fire_interval
+    if muzzle_light != null:
+        muzzle_light.light_energy = 2.8
+        var flash_tween := create_tween()
+        flash_tween.tween_property(muzzle_light, "light_energy", 0.0, 0.075)
     _refresh_hud()
     if camera == null:
         return
@@ -199,7 +244,8 @@ func _fire() -> void:
     var target: Object = hit.get("collider")
     if target != null and target.has_method("apply_damage"):
         target.call("apply_damage", damage_per_shot)
-        status_label.text = "TARGET HIT  •  -" + str(roundi(damage_per_shot)) + " HP"
+        status_label.text = "TARGET HIT"
+        _show_hit_marker()
     else:
         status_label.text = "IMPACT"
 
@@ -219,3 +265,22 @@ func _refresh_hud() -> void:
         ammo_label.text = "RIFLE   %02d / %03d" % [ammo, reserve_ammo]
     if status_label != null and not reloading:
         status_label.text = "READY  •  " + ("AIMING" if aiming else "HIP FIRE")
+
+func _show_hit_marker() -> void:
+    if hit_marker == null:
+        return
+    hit_marker.add_theme_color_override("font_color", Color(1.0, 0.22, 0.18, 1.0))
+    var tween := create_tween()
+    tween.tween_interval(0.12)
+    tween.tween_callback(func():
+        if is_instance_valid(hit_marker):
+            hit_marker.add_theme_color_override("font_color", Color(1.0, 0.22, 0.18, 0.0))
+    )
+
+func _on_health_changed(current_health: float, maximum_health: float) -> void:
+    if damage_overlay == null:
+        return
+    if current_health < maximum_health:
+        damage_overlay.color = Color(0.78, 0.015, 0.025, 0.2)
+        var tween := create_tween()
+        tween.tween_property(damage_overlay, "color", Color(0.78, 0.015, 0.025, 0.0), 0.32)
