@@ -126,6 +126,8 @@ jobs:
           test -x "$JAVA_HOME/bin/java"
           test -x "$ANDROID_HOME/platform-tools/adb"
           test -d "$ANDROID_HOME/platforms/android-35"
+          test -d "$ANDROID_HOME/platform-tools"
+          test -d "$ANDROID_HOME/cmdline-tools"
           test -d "$ANDROID_HOME/build-tools/35.0.0"
           test -d "$ANDROID_HOME/ndk/$ANDROID_NDK_VERSION"
           test -s Godot/bin/liblast_zone.android.template_debug.arm64.so
@@ -145,17 +147,21 @@ jobs:
           export GODOT_ANDROID_KEYSTORE_DEBUG_PATH="$HOME/.android/debug.keystore"
           export GODOT_ANDROID_KEYSTORE_DEBUG_USER="androiddebugkey"
           export GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD="android"
+          export ANDROID_HOME="$ANDROID_HOME"
+          export ANDROID_SDK_ROOT="$ANDROID_HOME"
+          export JAVA_HOME="$JAVA_HOME"
           mkdir -p build
           # Refresh the editor's project metadata after all native libraries and Android
           # export templates have been installed, then run the Android export.
           "$GODOT_BIN" --headless --editor --path Godot --quit --verbose
-          "$GODOT_BIN" --headless --path Godot --verbose --export-debug "Android" "$GITHUB_WORKSPACE/build/LAST-ZONE-Android-arm64.apk"
-          test -s build/LAST-ZONE-Android-arm64.apk
+          # Export with the debug keystore supplied through Godot's documented environment variables.
+          "$GODOT_BIN" --headless --path Godot --verbose --export-debug "Android" "$GITHUB_WORKSPACE/build/LAST-ZONE-Android-universal.apk"
+          test -s build/LAST-ZONE-Android-universal.apk
 
       - name: Upload installable APK
         uses: actions/upload-artifact@v4
         with:
           name: LAST-ZONE-Android-APK
-          path: build/LAST-ZONE-Android-arm64.apk
+          path: build/LAST-ZONE-Android-universal.apk
           if-no-files-found: error
           retention-days: 14
