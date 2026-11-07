@@ -175,14 +175,14 @@ func _make_beacon() -> void:
     base.position = Vector3(0, 1.6, -58)
     add_child(base)
 
-    var signal := MeshInstance3D.new()
+    var signal_orb := MeshInstance3D.new()
     var signal_mesh := SphereMesh.new()
     signal_mesh.radius = 0.9
     signal_mesh.height = 1.8
-    signal.mesh = signal_mesh
-    signal.material_override = beacon_material
-    signal.position = Vector3(0, 4.0, -58)
-    add_child(signal)
+    signal_orb.mesh = signal_mesh
+    signal_orb.material_override = beacon_material
+    signal_orb.position = Vector3(0, 4.0, -58)
+    add_child(signal_orb)
 
     var light := OmniLight3D.new()
     light.position = Vector3(0, 5.0, -58)
