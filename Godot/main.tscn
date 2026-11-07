@@ -1,10 +1,11 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Texture2D" path="res://assets/touch_arrow.svg" id="1_arrow"]
 [ext_resource type="Script" path="res://scripts/world_builder.gd" id="2_world"]
 [ext_resource type="Script" path="res://scripts/character_visual.gd" id="3_character"]
 [ext_resource type="Script" path="res://scripts/fps_combat.gd" id="4_combat"]
 [ext_resource type="Script" path="res://scripts/player_health.gd" id="5_health"]
+[ext_resource type="Script" path="res://scripts/game_frontend.gd" id="6_frontend"]
 
 [sub_resource type="Environment" id="Environment_world"]
 background_mode = 1
@@ -134,3 +135,7 @@ texture_normal = ExtResource("1_arrow")
 shape = SubResource("TouchButtonShape")
 action = "sprint"
 visibility_mode = 1
+
+[node name="Frontend" type="CanvasLayer" parent="."]
+script = ExtResource("6_frontend")
+layer = 10
