@@ -20,6 +20,11 @@ var environment_ref: WorldEnvironment
 var sun_ref: DirectionalLight3D
 var weather_mode := 0
 var map_panel: PanelContainer
+var nearby_interaction: Area3D
+var interaction_hint: Label
+var interaction_button: Button
+var riding_bike := false
+var bike_root: Node3D
 
 func _ready() -> void:
     _make_materials()
@@ -33,6 +38,7 @@ func _ready() -> void:
     sun_ref = get_node_or_null("Sun") as DirectionalLight3D
     _make_hud()
     _make_exploration_systems()
+    _make_interactables()
 
 func _make_materials() -> void:
     grass_material = _mat(Color(0.16, 0.31, 0.19))
@@ -675,6 +681,176 @@ func _make_weather_button() -> void:
                 environment_ref.environment.fog_enabled = false
     )
     layer.add_child(button)
+
+
+
+# Enterable house and motorcycle interaction points.
+func _make_interactables() -> void:
+    var layer := get_node_or_null("ExpeditionHUD") as CanvasLayer
+    if layer == null:
+        return
+    interaction_hint = Label.new()
+    interaction_hint.name = "InteractionHint"
+    interaction_hint.anchor_left = 0.5
+    interaction_hint.anchor_right = 0.5
+    interaction_hint.anchor_top = 1.0
+    interaction_hint.anchor_bottom = 1.0
+    interaction_hint.offset_left = -180
+    interaction_hint.offset_right = 180
+    interaction_hint.offset_top = -118
+    interaction_hint.offset_bottom = -84
+    interaction_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    interaction_hint.add_theme_font_size_override("font_size", 16)
+    interaction_hint.add_theme_color_override("font_color", Color(1.0, 0.82, 0.35))
+    layer.add_child(interaction_hint)
+
+    interaction_button = Button.new()
+    interaction_button.name = "InteractButton"
+    interaction_button.text = "INTERACT"
+    interaction_button.anchor_left = 1.0
+    interaction_button.anchor_right = 1.0
+    interaction_button.anchor_top = 1.0
+    interaction_button.anchor_bottom = 1.0
+    interaction_button.offset_left = -184
+    interaction_button.offset_right = -24
+    interaction_button.offset_top = -182
+    interaction_button.offset_bottom = -116
+    interaction_button.custom_minimum_size = Vector2(160, 58)
+    interaction_button.visible = false
+    interaction_button.pressed.connect(_use_interaction)
+    layer.add_child(interaction_button)
+
+    _add_interaction_area("HOUSE_ENTRY", Vector3(25, 1.0, -22.0), Vector3(3.8, 2.5, 2.2), "ENTER HOUSE", "house_enter")
+    _add_interaction_area("HOUSE_EXIT", Vector3(25, 1.0, -16.0), Vector3(3.8, 2.5, 2.2), "EXIT HOUSE", "house_exit")
+    _make_motorcycle(Vector3(7, 0.0, 5.0))
+
+func _add_interaction_area(label: String, at: Vector3, dimensions: Vector3, prompt: String, action: String) -> void:
+    var area := Area3D.new()
+    area.name = label
+    area.position = at
+    area.set_meta("prompt", prompt)
+    area.set_meta("action", action)
+    var collision := CollisionShape3D.new()
+    var shape := BoxShape3D.new()
+    shape.size = dimensions
+    collision.shape = shape
+    area.add_child(collision)
+    area.body_entered.connect(_on_interaction_entered.bind(area))
+    area.body_exited.connect(_on_interaction_exited.bind(area))
+    add_child(area)
+
+func _make_motorcycle(at: Vector3) -> void:
+    bike_root = Node3D.new()
+    bike_root.name = "FrontierMotorcycle"
+    bike_root.position = at
+    add_child(bike_root)
+    var frame := _mat(Color(0.82, 0.25, 0.07), true)
+    var rubber := _mat(Color(0.025, 0.03, 0.035))
+    var metal := _mat(Color(0.48, 0.53, 0.57))
+    var seat := _mat(Color(0.075, 0.065, 0.055))
+    for z in [-1.05, 1.05]:
+        var wheel := MeshInstance3D.new()
+        var wheel_mesh := CylinderMesh.new()
+        wheel_mesh.top_radius = 0.48
+        wheel_mesh.bottom_radius = 0.48
+        wheel_mesh.height = 0.2
+        wheel.mesh = wheel_mesh
+        wheel.material_override = rubber
+        wheel.rotation_degrees.z = 90
+        wheel.position = Vector3(0, 0.52, z)
+        bike_root.add_child(wheel)
+        var hub := MeshInstance3D.new()
+        var hub_mesh := CylinderMesh.new()
+        hub_mesh.top_radius = 0.16
+        hub_mesh.bottom_radius = 0.16
+        hub_mesh.height = 0.23
+        hub.mesh = hub_mesh
+        hub.material_override = metal
+        hub.rotation_degrees.z = 90
+        hub.position = Vector3(0, 0.52, z)
+        bike_root.add_child(hub)
+    _bike_box("BikeFrame", Vector3(0, 0.9, 0), Vector3(0.32, 0.3, 1.55), frame)
+    _bike_box("FuelTank", Vector3(0, 1.18, -0.05), Vector3(0.72, 0.48, 0.8), frame)
+    _bike_box("Seat", Vector3(0, 1.22, 0.63), Vector3(0.55, 0.18, 0.72), seat)
+    _bike_box("Handlebar", Vector3(0, 1.48, -0.82), Vector3(1.0, 0.08, 0.12), metal)
+    _bike_box("Headlight", Vector3(0, 1.25, -0.56), Vector3(0.36, 0.3, 0.12), _mat(Color(0.6, 0.88, 1.0), true))
+    var area := Area3D.new()
+    area.name = "MotorcycleInteraction"
+    area.position = Vector3(0, 1.0, 0)
+    area.set_meta("prompt", "RIDE MOTORCYCLE")
+    area.set_meta("action", "bike_enter")
+    var collision := CollisionShape3D.new()
+    var sphere := SphereShape3D.new()
+    sphere.radius = 3.0
+    collision.shape = sphere
+    area.add_child(collision)
+    area.body_entered.connect(_on_interaction_entered.bind(area))
+    area.body_exited.connect(_on_interaction_exited.bind(area))
+    bike_root.add_child(area)
+
+func _bike_box(label: String, at: Vector3, dimensions: Vector3, material: Material) -> void:
+    var item := MeshInstance3D.new()
+    item.name = label
+    var mesh := BoxMesh.new()
+    mesh.size = dimensions
+    item.mesh = mesh
+    item.material_override = material
+    item.position = at
+    bike_root.add_child(item)
+
+func _on_interaction_entered(body: Node3D, area: Area3D) -> void:
+    if body.name != "Player":
+        return
+    nearby_interaction = area
+    _refresh_interaction_prompt()
+
+func _on_interaction_exited(body: Node3D, area: Area3D) -> void:
+    if body.name != "Player":
+        return
+    if nearby_interaction == area:
+        nearby_interaction = null
+        _refresh_interaction_prompt()
+
+func _refresh_interaction_prompt() -> void:
+    var active := is_instance_valid(nearby_interaction)
+    if is_instance_valid(interaction_button):
+        interaction_button.visible = active
+        if active:
+            interaction_button.text = str(nearby_interaction.get_meta("prompt", "INTERACT"))
+    if is_instance_valid(interaction_hint):
+        interaction_hint.text = (str(nearby_interaction.get_meta("prompt", "")) + "  •  TAP / E") if active else ""
+
+func _unhandled_input(event: InputEvent) -> void:
+    if event.is_action_pressed("interact") and not event.is_echo():
+        _use_interaction()
+
+func _use_interaction() -> void:
+    if not is_instance_valid(nearby_interaction):
+        return
+    var action := str(nearby_interaction.get_meta("action", ""))
+    var player := get_node_or_null("Player") as CharacterBody3D
+    if player == null:
+        return
+    match action:
+        "house_enter":
+            player.global_position = Vector3(25, 0.95, -18.2)
+        "house_exit":
+            player.global_position = Vector3(25, 0.95, -24.8)
+        "bike_enter":
+            if riding_bike:
+                return
+            riding_bike = true
+            player.global_position = bike_root.global_position + Vector3(0, 0.95, 0)
+            player.set("vehicle_mode", true)
+            nearby_interaction.set_meta("prompt", "LEAVE MOTORCYCLE")
+            nearby_interaction.set_meta("action", "bike_exit")
+        "bike_exit":
+            riding_bike = false
+            player.global_position = bike_root.global_position + Vector3(2.0, 0.95, 0)
+            player.set("vehicle_mode", false)
+            nearby_interaction.set_meta("prompt", "RIDE MOTORCYCLE")
+            nearby_interaction.set_meta("action", "bike_enter")
+    _refresh_interaction_prompt()
 
 
 # Spawn exactly the bot count selected in the match lobby.
