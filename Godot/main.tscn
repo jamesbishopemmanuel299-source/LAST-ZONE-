@@ -1,6 +1,5 @@
 [gd_scene load_steps=14 format=3]
 
-[ext_resource type="Texture2D" path="res://assets/touch_arrow.svg" id="1_arrow"]
 [ext_resource type="Script" path="res://scripts/world_builder.gd" id="2_world"]
 [ext_resource type="Script" path="res://scripts/character_visual.gd" id="3_character"]
 [ext_resource type="Script" path="res://scripts/fps_combat.gd" id="4_combat"]
@@ -38,9 +37,6 @@ height = 1.8
 [sub_resource type="CapsuleMesh" id="PlayerMesh"]
 radius = 0.45
 height = 1.8
-
-[sub_resource type="CircleShape2D" id="TouchButtonShape"]
-radius = 38.0
 
 [node name="Main" type="Node3D"]
 script = ExtResource("2_world")
@@ -89,53 +85,6 @@ script = ExtResource("5_health")
 
 [node name="FPSCombat" type="Node" parent="Player"]
 script = ExtResource("4_combat")
-
-[node name="TouchControls" type="CanvasLayer" parent="."]
-
-[node name="MoveUp" type="TouchScreenButton" parent="TouchControls"]
-position = Vector2(126, 520)
-texture_normal = ExtResource("1_arrow")
-shape = SubResource("TouchButtonShape")
-action = "move_forward"
-visibility_mode = 1
-
-[node name="MoveLeft" type="TouchScreenButton" parent="TouchControls"]
-position = Vector2(58, 588)
-rotation = -1.5708
-texture_normal = ExtResource("1_arrow")
-shape = SubResource("TouchButtonShape")
-action = "move_left"
-visibility_mode = 1
-
-[node name="MoveRight" type="TouchScreenButton" parent="TouchControls"]
-position = Vector2(194, 588)
-rotation = 1.5708
-texture_normal = ExtResource("1_arrow")
-shape = SubResource("TouchButtonShape")
-action = "move_right"
-visibility_mode = 1
-
-[node name="MoveDown" type="TouchScreenButton" parent="TouchControls"]
-position = Vector2(126, 656)
-rotation = 3.14159
-texture_normal = ExtResource("1_arrow")
-shape = SubResource("TouchButtonShape")
-action = "move_back"
-visibility_mode = 1
-
-[node name="Jump" type="TouchScreenButton" parent="TouchControls"]
-position = Vector2(1115, 600)
-texture_normal = ExtResource("1_arrow")
-shape = SubResource("TouchButtonShape")
-action = "jump"
-visibility_mode = 1
-
-[node name="Sprint" type="TouchScreenButton" parent="TouchControls"]
-position = Vector2(1015, 500)
-texture_normal = ExtResource("1_arrow")
-shape = SubResource("TouchButtonShape")
-action = "sprint"
-visibility_mode = 1
 
 [node name="Frontend" type="CanvasLayer" parent="."]
 script = ExtResource("6_frontend")
