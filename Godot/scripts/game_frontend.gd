@@ -161,8 +161,12 @@ func _show_lobby() -> void:
         selected_mode = (selected_mode + 1) % modes.size()
         _show_lobby()
     )
-    _button("BOTS   " + str(selected_bots) + "   (+)", func():
-        selected_bots = (selected_bots + 1) % 9
+    _button("BOTS   " + str(selected_bots) + " / 20", func():
+        selected_bots = 1 if selected_bots >= 20 else selected_bots + 1
+        _show_lobby()
+    )
+    _button("DECREASE BOTS   (-)", func():
+        selected_bots = maxi(1, selected_bots - 1)
         _show_lobby()
     )
     _button("MATCH TIME   " + str(match_minutes) + " MIN   (+)", func():
@@ -226,6 +230,9 @@ func _show_notice(title_text: String, message: String) -> void:
     _button("BACK", _show_main)
 
 func _start_match() -> void:
+    var world := get_parent()
+    if world != null and world.has_method("configure_bots"):
+        world.configure_bots(selected_bots)
     shade.hide()
     var old_hud := get_parent().get_node_or_null("ExpeditionHUD")
     if old_hud != null:
