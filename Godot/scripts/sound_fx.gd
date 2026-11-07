@@ -27,6 +27,9 @@ func play_empty() -> void:
 func set_enabled(value: bool) -> void:
     enabled = value
 
+func set_volume(value: float) -> void:
+    volume = clampf(value, 0.0, 1.0)
+
 func _play_tone(frequency: float, duration: float, amplitude: float, noise_mix: float) -> void:
     if not enabled:
         return
