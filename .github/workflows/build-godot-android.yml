@@ -155,7 +155,7 @@ jobs:
           # export templates have been installed, then run the Android export.
           "$GODOT_BIN" --headless --editor --path Godot --quit --verbose
           # Export with the debug keystore supplied through Godot's documented environment variables.
-          "$GODOT_BIN" --headless --path Godot --verbose --export-debug "Android" "$GITHUB_WORKSPACE/build/LAST-ZONE-Android-universal.apk"
+          "$GODOT_BIN" --headless --path Godot --verbose --export-debug "Android" "$GITHUB_WORKSPACE/build/LAST-ZONE-Android-arm64.apk"
           test -s build/LAST-ZONE-Android-universal.apk
 
       - name: Upload installable APK
