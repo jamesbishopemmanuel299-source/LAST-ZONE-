@@ -22,6 +22,16 @@ func _upgrade_environment() -> void:
     if world == null or world.environment == null:
         return
     var env := world.environment
+    var sky := Sky.new()
+    var sky_material := ProceduralSkyMaterial.new()
+    sky_material.sky_top_color = Color(0.055, 0.16, 0.29)
+    sky_material.sky_horizon_color = Color(0.48, 0.63, 0.72)
+    sky_material.ground_bottom_color = Color(0.055, 0.075, 0.07)
+    sky_material.ground_horizon_color = Color(0.31, 0.38, 0.36)
+    sky_material.sun_angle_max = 18.0
+    sky.sky_material = sky_material
+    env.background_mode = Environment.BG_SKY
+    env.sky = sky
     env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
     env.tonemap_exposure = 1.08
     env.tonemap_white = 5.0
@@ -32,6 +42,11 @@ func _upgrade_environment() -> void:
     env.glow_enabled = true
     env.glow_intensity = 0.32
     env.glow_strength = 0.55
+    env.glow_bloom = 0.08
+    env.adjustment_enabled = true
+    env.adjustment_brightness = 1.02
+    env.adjustment_contrast = 1.08
+    env.adjustment_saturation = 1.12
     env.fog_enabled = true
     env.fog_light_color = Color(0.38, 0.48, 0.58)
     env.fog_density = 0.0022
@@ -84,7 +99,8 @@ func _add_weather() -> void:
     weather_particles.draw_pass_1 = rain_mesh
     weather_particles.position = Vector3(0, 14, 0)
     add_child(weather_particles)
-    weather_particles.emitting = true
+    weather_particles.set_meta("weather_active", false)
+    weather_particles.emitting = false
 
     smoke_particles = GPUParticles3D.new()
     smoke_particles.name = "DistantAmbientSmoke"
@@ -175,20 +191,30 @@ func _pbr(color: Color, metal: float, rough: float) -> StandardMaterial3D:
     return mat
 
 func _apply_quality(level: int) -> void:
+    quality = clampi(level, 0, 2)
     var sun := get_node_or_null("Sun") as DirectionalLight3D
     var world := get_node_or_null("WorldEnvironment") as WorldEnvironment
     if sun:
-        sun.shadow_enabled = level >= 1
-        sun.directional_shadow_max_distance = 75.0 if level >= 2 else 42.0
+        sun.shadow_enabled = quality >= 1
+        sun.directional_shadow_max_distance = 88.0 if quality >= 2 else 42.0
+        sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS if quality >= 2 else DirectionalLight3D.SHADOW_ORTHOGONAL
     if world and world.environment:
-        world.environment.glow_enabled = level >= 1
-        world.environment.fog_enabled = level >= 1
+        world.environment.glow_enabled = quality >= 1
+        world.environment.fog_enabled = quality >= 1
+        world.environment.ambient_light_energy = 0.72 if quality == 0 else (0.82 if quality == 1 else 0.9)
     if weather_particles:
-        weather_particles.amount = 420 if level >= 2 else (180 if level == 1 else 0)
-        weather_particles.emitting = level >= 1
+        weather_particles.amount = 520 if quality >= 2 else (220 if quality == 1 else 0)
+        weather_particles.emitting = quality >= 1 and weather_particles.get_meta("weather_active", false)
     if smoke_particles:
-        smoke_particles.amount = 34 if level >= 1 else 12
-        smoke_particles.emitting = true
+        smoke_particles.amount = 42 if quality >= 2 else (22 if quality == 1 else 8)
+        smoke_particles.emitting = quality >= 1
+
+func set_weather(mode: int) -> void:
+    if weather_particles == null:
+        return
+    var raining := mode == 1
+    weather_particles.set_meta("weather_active", raining)
+    weather_particles.emitting = raining and quality >= 1
 
 func _add_fire_effect() -> void:
     var fire := GPUParticles3D.new()
