@@ -833,7 +833,7 @@ func _use_interaction() -> void:
         return
     match action:
         "house_enter":
-            player.global_position = Vector3(25, 0.95, -18.2)
+            player.global_position = Vector3(25, 0.95, -20.0)
         "house_exit":
             player.global_position = Vector3(25, 0.95, -24.8)
         "bike_enter":
@@ -841,13 +841,13 @@ func _use_interaction() -> void:
                 return
             riding_bike = true
             player.global_position = bike_root.global_position + Vector3(0, 0.95, 0)
-            player.set("vehicle_mode", true)
+            player.call("set_vehicle_mode", true)
             nearby_interaction.set_meta("prompt", "LEAVE MOTORCYCLE")
             nearby_interaction.set_meta("action", "bike_exit")
         "bike_exit":
             riding_bike = false
             player.global_position = bike_root.global_position + Vector3(2.0, 0.95, 0)
-            player.set("vehicle_mode", false)
+            player.call("set_vehicle_mode", false)
             nearby_interaction.set_meta("prompt", "RIDE MOTORCYCLE")
             nearby_interaction.set_meta("action", "bike_enter")
     _refresh_interaction_prompt()
