@@ -188,7 +188,11 @@ func _fire() -> void:
     var query := PhysicsRayQueryParameters3D.create(origin, end)
     query.exclude = [get_parent().get_rid()]
     query.collide_with_areas = true
-    var hit := get_world_3d().direct_space_state.intersect_ray(query)
+    var world_3d: World3D = get_viewport().world_3d
+    if world_3d == null:
+        status_label.text = "WORLD PHYSICS UNAVAILABLE"
+        return
+    var hit: Dictionary = world_3d.direct_space_state.intersect_ray(query)
     if hit.is_empty():
         status_label.text = "SHOT FIRED"
         return
