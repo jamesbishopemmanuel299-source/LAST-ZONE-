@@ -115,6 +115,27 @@ jobs:
           chmod +x "$GODOT_BIN"
           "$GODOT_BIN" --headless --path Godot --editor --quit
 
+      - name: Validate Android export prerequisites
+        shell: bash
+        run: |
+          set -euxo pipefail
+          GODOT_BIN=$(find "$RUNNER_TEMP/godot" -maxdepth 1 -type f -name 'Godot_v*.x86_64' | head -n 1)
+          test -x "$GODOT_BIN"
+          test -d "$HOME/.local/share/godot/export_templates/$GODOT_VERSION.stable"
+          test -s "$HOME/.android/debug.keystore"
+          test -x "$JAVA_HOME/bin/java"
+          test -x "$ANDROID_HOME/platform-tools/adb"
+          test -d "$ANDROID_HOME/platforms/android-35"
+          test -d "$ANDROID_HOME/build-tools/35.0.0"
+          test -d "$ANDROID_HOME/ndk/$ANDROID_NDK_VERSION"
+          test -s Godot/bin/liblast_zone.android.template_debug.arm64.so
+          test -s Godot/bin/liblast_zone.android.template_release.arm64.so
+          test -s Godot/bin/liblast_zone.linux.template_release.x86_64.so
+          echo "Godot editor settings:"
+          cat "$HOME/.config/godot/editor_settings-4.4.tres"
+          echo "Android export preset:"
+          cat Godot/export_presets.cfg
+
       - name: Export universal ARM64 Android APK
         shell: bash
         run: |
@@ -125,6 +146,9 @@ jobs:
           export GODOT_ANDROID_KEYSTORE_DEBUG_USER="androiddebugkey"
           export GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD="android"
           mkdir -p build
+          # Refresh the editor's project metadata after all native libraries and Android
+          # export templates have been installed, then run the Android export.
+          "$GODOT_BIN" --headless --editor --path Godot --quit --verbose
           "$GODOT_BIN" --headless --path Godot --verbose --export-debug "Android" "$GITHUB_WORKSPACE/build/LAST-ZONE-Android-arm64.apk"
           test -s build/LAST-ZONE-Android-arm64.apk
 
