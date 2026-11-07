@@ -28,7 +28,6 @@ func _ready() -> void:
     _make_landmarks()
     _make_forest()
     _make_beacon()
-    _spawn_robot_patrols()
     environment_ref = get_node_or_null("WorldEnvironment") as WorldEnvironment
     sun_ref = get_node_or_null("Sun") as DirectionalLight3D
     _make_hud()
@@ -637,7 +636,33 @@ func _make_weather_button() -> void:
     layer.add_child(button)
 
 
-# Add lightweight robot patrols around the research district and island routes.
+# Spawn exactly the bot count selected in the match lobby.
+func configure_bots(requested_count: int) -> void:
+    var bot_count := clampi(requested_count, 1, 20)
+    for existing in get_tree().get_nodes_in_group("match_bots"):
+        if is_instance_valid(existing):
+            existing.queue_free()
+    var bot_script := load("res://scripts/robot_enemy.gd")
+    if bot_script == null:
+        push_error("Bot script could not be loaded: res://scripts/robot_enemy.gd")
+        return
+    var player := get_node_or_null("Player") as Node3D
+    var center := Vector3.ZERO
+    if player != null:
+        center = player.global_position
+    for index in range(bot_count):
+        var angle := TAU * float(index) / float(bot_count)
+        var radius := 13.0 + float(index % 3) * 3.0
+        var spawn_position := center + Vector3(cos(angle) * radius, 0.0, sin(angle) * radius)
+        var bot := CharacterBody3D.new()
+        bot.name = "MatchBot_%02d" % (index + 1)
+        bot.set_script(bot_script)
+        bot.position = spawn_position
+        bot.set_meta("patrol_origin", spawn_position)
+        bot.add_to_group("match_bots")
+        add_child(bot)
+    print("LAST-ZONE match started with ", bot_count, " bots")
+
 func _spawn_robot_patrols() -> void:
     var robot_script := load("res://scripts/robot_enemy.gd")
     if robot_script == null:
