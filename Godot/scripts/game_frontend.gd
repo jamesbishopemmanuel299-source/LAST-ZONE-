@@ -1,22 +1,26 @@
 extends CanvasLayer
-## Unified LAST-ZONE interface theme for menus, lobby, multiplayer and settings.
+## Battle-royale inspired LAST-ZONE interface.
+## Original layout and styling; no copied game assets or branding.
 
-const BLUE := Color(0.18, 0.68, 0.94)
-const CYAN := Color(0.22, 0.88, 0.96)
-const PANEL := Color(0.035, 0.065, 0.09, 0.98)
-const MUTED := Color(0.68, 0.77, 0.85)
-const WHITE := Color(0.94, 0.98, 1.0)
+const GOLD := Color(1.0, 0.72, 0.20)
+const ORANGE := Color(1.0, 0.39, 0.12)
+const CYAN := Color(0.20, 0.82, 0.96)
+const WHITE := Color(0.96, 0.97, 0.99)
+const MUTED := Color(0.66, 0.72, 0.79)
+const DARK := Color(0.025, 0.035, 0.052, 0.985)
+const CARD := Color(0.075, 0.09, 0.115, 0.98)
+
 var shade: ColorRect
 var content: VBoxContainer
 var status_label: Label
-var selected_weapon := 0
 var selected_map := 0
 var selected_mode := 0
 var selected_bots := 2
 var match_minutes := 5
-var weapons := ["AKM", "P90", "M4A1", "SCAR-L", "UMP45"]
-var maps := ["WARMART", "DESERT OUTPOST", "HARBOR"]
-var modes := ["DEATH MATCH", "TEAM DEATH MATCH", "SURVIVAL"]
+var selected_outfit := 0
+var maps := ["ISLAND FRONTIER", "DESERT OUTPOST", "HARBOR CITY"]
+var modes := ["SOLO", "DUO", "SQUAD"]
+var outfits := ["FIELD EXPLORER", "ARCTIC RUNNER", "SUNSET NOMAD", "URBAN SCOUT"]
 
 func _ready() -> void:
     layer = 10
@@ -34,49 +38,39 @@ func _show_frontend() -> void:
     _build_shell()
     _show_main()
 
-func _panel_style(bg: Color = PANEL, border: Color = Color(0.12, 0.43, 0.59, 0.9)) -> StyleBoxFlat:
-    var style := StyleBoxFlat.new()
-    style.bg_color = bg
-    style.border_color = border
-    style.set_border_width_all(1)
-    style.set_corner_radius_all(14)
-    style.content_margin_left = 16
-    style.content_margin_right = 16
-    style.content_margin_top = 12
-    style.content_margin_bottom = 12
-    return style
+func _style(bg: Color = CARD, border: Color = Color(0.25, 0.29, 0.34, 1.0)) -> StyleBoxFlat:
+    var s := StyleBoxFlat.new()
+    s.bg_color = bg
+    s.border_color = border
+    s.set_border_width_all(1)
+    s.set_corner_radius_all(9)
+    s.content_margin_left = 12
+    s.content_margin_right = 12
+    s.content_margin_top = 9
+    s.content_margin_bottom = 9
+    return s
 
 func _build_shell() -> void:
     shade = ColorRect.new()
     shade.name = "FrontEndShade"
-    shade.color = Color(0.006, 0.014, 0.025, 0.96)
+    shade.color = Color(0.008, 0.012, 0.02, 0.985)
     shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
     add_child(shade)
 
-    var backdrop := ColorRect.new()
-    backdrop.color = Color(0.025, 0.12, 0.18, 0.28)
-    backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-    shade.add_child(backdrop)
-
     var frame := PanelContainer.new()
-    frame.name = "MenuFrame"
+    frame.name = "BattleLobbyFrame"
     frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-    frame.offset_left = 12
-    frame.offset_top = 12
-    frame.offset_right = -12
-    frame.offset_bottom = -12
-    var frame_style := _panel_style(Color(0.018, 0.034, 0.052, 0.985), Color(0.12, 0.48, 0.68, 0.95))
+    frame.offset_left = 7
+    frame.offset_top = 7
+    frame.offset_right = -7
+    frame.offset_bottom = -7
+    var frame_style := _style(Color(0.025, 0.032, 0.045, 0.99), Color(0.34, 0.27, 0.16, 1.0))
     frame_style.set_border_width_all(2)
-    frame_style.set_corner_radius_all(20)
-    frame_style.content_margin_left = 16
-    frame_style.content_margin_right = 16
-    frame_style.content_margin_top = 14
-    frame_style.content_margin_bottom = 14
     frame.add_theme_stylebox_override("panel", frame_style)
     shade.add_child(frame)
 
     var scroll := ScrollContainer.new()
-    scroll.name = "MenuScroll"
+    scroll.name = "LobbyScroll"
     scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
     scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -84,195 +78,186 @@ func _build_shell() -> void:
 
     content = VBoxContainer.new()
     content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-    content.add_theme_constant_override("separation", 11)
+    content.add_theme_constant_override("separation", 8)
     scroll.add_child(content)
 
 func _clear() -> void:
     for child in content.get_children():
         child.queue_free()
 
-func _heading(title_text: String, subtitle_text: String = "") -> void:
-    var eyebrow := Label.new()
-    eyebrow.text = "◈  LAST-ZONE     /     TACTICAL OPERATIONS"
-    eyebrow.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-    eyebrow.add_theme_font_size_override("font_size", 12)
-    eyebrow.add_theme_color_override("font_color", CYAN)
-    content.add_child(eyebrow)
+func _label(text_value: String, size: int = 13, color: Color = MUTED, centered: bool = false) -> Label:
+    var l := Label.new()
+    l.text = text_value
+    l.add_theme_font_size_override("font_size", size)
+    l.add_theme_color_override("font_color", color)
+    l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    if centered:
+        l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    content.add_child(l)
+    return l
 
-    var title := Label.new()
-    title.text = title_text
-    title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-    title.add_theme_font_size_override("font_size", 31)
-    title.add_theme_color_override("font_color", WHITE)
-    title.add_theme_color_override("font_shadow_color", Color(0.04, 0.35, 0.55, 0.65))
-    title.add_theme_constant_override("shadow_offset_x", 0)
-    title.add_theme_constant_override("shadow_offset_y", 2)
-    content.add_child(title)
-
-    if not subtitle_text.is_empty():
-        var subtitle := Label.new()
-        subtitle.text = subtitle_text
-        subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-        subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-        subtitle.add_theme_font_size_override("font_size", 12)
-        subtitle.add_theme_color_override("font_color", MUTED)
-        content.add_child(subtitle)
-
-    var line := ColorRect.new()
-    line.custom_minimum_size = Vector2(0, 2)
-    line.color = Color(0.12, 0.58, 0.78, 0.85)
-    content.add_child(line)
-
-func _button(caption: String, callback: Callable, accent: bool = false) -> Button:
-    var button := Button.new()
-    button.text = caption
-    button.custom_minimum_size = Vector2(0, 50)
-    button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-    button.add_theme_font_size_override("font_size", 15)
-    button.add_theme_color_override("font_color", WHITE)
-    button.add_theme_color_override("font_hover_color", WHITE)
-    button.add_theme_color_override("font_pressed_color", CYAN)
-    var normal := _panel_style(Color(0.045, 0.09, 0.125, 0.98), Color(0.13, 0.29, 0.39, 0.95))
-    normal.set_corner_radius_all(10)
-    if accent:
-        normal.bg_color = Color(0.025, 0.34, 0.49, 1.0)
-        normal.border_color = BLUE
+func _button(text_value: String, callback: Callable, primary: bool = false) -> Button:
+    var b := Button.new()
+    b.text = text_value
+    b.custom_minimum_size = Vector2(0, 45)
+    b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    b.add_theme_font_size_override("font_size", 14)
+    b.add_theme_color_override("font_color", WHITE)
+    b.add_theme_color_override("font_hover_color", WHITE)
+    var normal := _style(Color(0.12, 0.13, 0.15, 1.0), Color(0.35, 0.36, 0.38, 1.0))
+    if primary:
+        normal.bg_color = Color(0.78, 0.30, 0.075, 1.0)
+        normal.border_color = GOLD
         normal.set_border_width_all(2)
     var hover := normal.duplicate()
-    hover.bg_color = Color(0.055, 0.20, 0.27, 1.0) if not accent else Color(0.035, 0.47, 0.62, 1.0)
-    hover.border_color = CYAN
-    var pressed := normal.duplicate()
-    pressed.bg_color = Color(0.025, 0.27, 0.37, 1.0)
-    button.add_theme_stylebox_override("normal", normal)
-    button.add_theme_stylebox_override("hover", hover)
-    button.add_theme_stylebox_override("pressed", pressed)
-    button.add_theme_stylebox_override("focus", hover)
-    button.pressed.connect(func():
+    hover.bg_color = Color(0.94, 0.43, 0.10, 1.0) if primary else Color(0.20, 0.23, 0.27, 1.0)
+    hover.border_color = GOLD
+    b.add_theme_stylebox_override("normal", normal)
+    b.add_theme_stylebox_override("hover", hover)
+    b.add_theme_stylebox_override("pressed", _style(Color(0.34, 0.18, 0.10, 1.0), GOLD))
+    b.pressed.connect(func():
         var sound = get_node_or_null("/root/SoundFX")
         if sound != null:
             sound.play_ui()
         callback.call()
     )
-    content.add_child(button)
-    return button
+    content.add_child(b)
+    return b
 
-func _label(caption: String, size: int = 16) -> Label:
-    var label := Label.new()
-    label.text = caption
-    label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-    label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-    label.add_theme_font_size_override("font_size", size)
-    label.add_theme_color_override("font_color", MUTED)
-    content.add_child(label)
-    return label
-
-func _section_card(title_text: String, detail: String) -> void:
-    var card := PanelContainer.new()
-    card.add_theme_stylebox_override("panel", _panel_style(Color(0.035, 0.085, 0.12, 0.98), Color(0.10, 0.40, 0.56, 0.9)))
-    content.add_child(card)
-    var box := VBoxContainer.new()
-    box.add_theme_constant_override("separation", 5)
-    card.add_child(box)
+func _card(title_text: String, detail: String, accent: Color = GOLD) -> void:
+    var panel := PanelContainer.new()
+    panel.add_theme_stylebox_override("panel", _style(Color(0.075, 0.085, 0.105, 0.99), accent))
+    content.add_child(panel)
+    var stack := VBoxContainer.new()
+    stack.add_theme_constant_override("separation", 4)
+    panel.add_child(stack)
     var title := Label.new()
     title.text = title_text
     title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-    title.add_theme_font_size_override("font_size", 19)
-    title.add_theme_color_override("font_color", WHITE)
-    box.add_child(title)
-    var description := Label.new()
-    description.text = detail
-    description.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-    description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-    description.add_theme_font_size_override("font_size", 12)
-    description.add_theme_color_override("font_color", MUTED)
-    box.add_child(description)
+    title.add_theme_font_size_override("font_size", 17)
+    title.add_theme_color_override("font_color", accent)
+    stack.add_child(title)
+    var detail_label := Label.new()
+    detail_label.text = detail
+    detail_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    detail_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    detail_label.add_theme_font_size_override("font_size", 12)
+    detail_label.add_theme_color_override("font_color", WHITE)
+    stack.add_child(detail_label)
+
+func _top_bar() -> void:
+    var bar := PanelContainer.new()
+    bar.add_theme_stylebox_override("panel", _style(Color(0.055, 0.065, 0.08, 1.0), Color(0.35, 0.28, 0.16, 1.0)))
+    content.add_child(bar)
+    var row := HBoxContainer.new()
+    row.add_theme_constant_override("separation", 8)
+    bar.add_child(row)
+    var brand := Label.new()
+    brand.text = "LAST-ZONE"
+    brand.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    brand.add_theme_font_size_override("font_size", 19)
+    brand.add_theme_color_override("font_color", GOLD)
+    row.add_child(brand)
+    var profile := Label.new()
+    profile.text = "PLAYER 01  •  LV.1"
+    profile.add_theme_font_size_override("font_size", 11)
+    profile.add_theme_color_override("font_color", WHITE)
+    row.add_child(profile)
 
 func _show_main() -> void:
     _clear()
-    _heading("ENTER THE LAST ZONE", "ANDROID EDITION     •     OFFLINE PRACTICE + MULTIPLAYER")
-    _section_card("OPERATION: LAST STAND", "Select an arena, configure your match and enter the zone.")
-    _label("QUICK DEPLOY     •     " + maps[selected_map] + "     •     " + str(selected_bots) + " BOTS", 12)
-    _button("▶     PLAY NOW", _show_lobby, true)
-    _button("◈     MULTIPLAYER", _show_multiplayer)
-    _button("▣     LOADOUT", _show_weapons)
-    _button("⚙     SETTINGS", _show_settings)
-    _label("PROFILE  •  LOCAL PLAYER       BUILD 2.2", 11)
+    _top_bar()
+    _label("SEASON 01   /   FRONTIER RISING", 11, CYAN, true)
+    _card("WELCOME TO THE FRONTIER", "Your island adventure starts here. Explore, team up and complete challenges.", GOLD)
 
-func _show_weapons() -> void:
-    _clear()
-    _heading("LOADOUT", "Select your preferred equipment")
-    _section_card("CURRENT SELECTION", weapons[selected_weapon])
-    var row := HBoxContainer.new()
-    row.add_theme_constant_override("separation", 10)
-    content.add_child(row)
-    var previous := Button.new()
-    previous.text = "‹  PREVIOUS"
-    previous.custom_minimum_size = Vector2(0, 48)
-    previous.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-    previous.add_theme_stylebox_override("normal", _panel_style(Color(0.045, 0.09, 0.125, 1)))
-    previous.pressed.connect(func():
-        selected_weapon = posmod(selected_weapon - 1, weapons.size())
-        _show_weapons()
-    )
-    row.add_child(previous)
-    var next := Button.new()
-    next.text = "NEXT  ›"
-    next.custom_minimum_size = Vector2(0, 48)
-    next.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-    next.add_theme_stylebox_override("normal", _panel_style(Color(0.045, 0.09, 0.125, 1)))
-    next.pressed.connect(func():
-        selected_weapon = (selected_weapon + 1) % weapons.size()
-        _show_weapons()
-    )
-    row.add_child(next)
-    _button("CONTINUE TO LOBBY", _show_lobby, true)
-    _button("BACK TO HOME", _show_main)
+    var avatar := PanelContainer.new()
+    avatar.custom_minimum_size = Vector2(0, 170)
+    avatar.add_theme_stylebox_override("panel", _style(Color(0.12, 0.14, 0.17, 1.0), Color(0.48, 0.34, 0.17, 1.0)))
+    content.add_child(avatar)
+    var avatar_stack := VBoxContainer.new()
+    avatar_stack.alignment = BoxContainer.ALIGNMENT_CENTER
+    avatar_stack.add_theme_constant_override("separation", 4)
+    avatar.add_child(avatar_stack)
+    var silhouette := Label.new()
+    silhouette.text = "◉"
+    silhouette.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    silhouette.add_theme_font_size_override("font_size", 70)
+    silhouette.add_theme_color_override("font_color", Color(0.72, 0.76, 0.80))
+    avatar_stack.add_child(silhouette)
+    var outfit_label := Label.new()
+    outfit_label.text = outfits[selected_outfit]
+    outfit_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    outfit_label.add_theme_font_size_override("font_size", 12)
+    outfit_label.add_theme_color_override("font_color", GOLD)
+    avatar_stack.add_child(outfit_label)
+
+    _card("FEATURED MODE", modes[selected_mode] + "  •  " + maps[selected_map], ORANGE)
+    _button("▶   START MATCH", _show_lobby, true)
+
+    var nav := HBoxContainer.new()
+    nav.add_theme_constant_override("separation", 5)
+    content.add_child(nav)
+    _small_nav(nav, "EVENTS", _show_events)
+    _small_nav(nav, "MISSIONS", _show_missions)
+    _small_nav(nav, "COLLECTION", _show_collection)
+
+    _button("PLAY WITH FRIENDS  /  MULTIPLAYER", _show_multiplayer)
+    _button("PROFILE & PLAYER STATS", _show_profile)
+    _button("SETTINGS", _show_settings)
+    _label("DAILY BONUS   •   COMPLETE MISSIONS TO EARN XP", 10, MUTED, true)
+
+func _small_nav(parent: HBoxContainer, caption: String, callback: Callable) -> void:
+    var b := Button.new()
+    b.text = caption
+    b.custom_minimum_size = Vector2(0, 42)
+    b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    b.add_theme_font_size_override("font_size", 10)
+    b.add_theme_color_override("font_color", WHITE)
+    b.add_theme_stylebox_override("normal", _style(Color(0.13, 0.14, 0.16, 1.0), Color(0.36, 0.32, 0.25, 1.0)))
+    b.pressed.connect(callback)
+    parent.add_child(b)
 
 func _show_lobby() -> void:
     _clear()
-    _heading("MATCH LOBBY", "Configure your session before starting")
-    _section_card("MATCH PREVIEW", maps[selected_map] + "   •   " + modes[selected_mode])
-    _button("ARENA     ‹   " + maps[selected_map] + "   ›", func():
+    _top_bar()
+    _label("MATCHMAKING  /  BATTLE ARENA", 11, CYAN, true)
+    _card("MATCH SETUP", "Choose your map and team size before entering the island.")
+    _button("MAP  •  " + maps[selected_map], func():
         selected_map = (selected_map + 1) % maps.size()
         _show_lobby()
     )
-    _button("GAME MODE     ‹   " + modes[selected_mode] + "   ›", func():
+    _button("TEAM  •  " + modes[selected_mode], func():
         selected_mode = (selected_mode + 1) % modes.size()
         _show_lobby()
     )
-    _button("BOT COUNT     " + str(selected_bots) + " / 20     (+)", func():
+    _button("PRACTICE PARTICIPANTS  •  " + str(selected_bots), func():
         selected_bots = 1 if selected_bots >= 20 else selected_bots + 1
         _show_lobby()
     )
-    _button("REDUCE BOTS     (−)", func():
-        selected_bots = maxi(1, selected_bots - 1)
-        _show_lobby()
-    )
-    _button("MATCH LENGTH     " + str(match_minutes) + " MIN     (+)", func():
+    _button("MATCH LENGTH  •  " + str(match_minutes) + " MIN", func():
         match_minutes = 5 if match_minutes >= 15 else match_minutes + 5
         _show_lobby()
     )
-    _button("LOADOUT     •     " + weapons[selected_weapon], _show_weapons)
-    _button("DEPLOY", _start_match, true)
-    _button("BACK", _show_main)
+    _card("READY CHECK", "Map: " + maps[selected_map] + "\nTeam: " + modes[selected_mode] + "\nPractice participants: " + str(selected_bots), GOLD)
+    _button("CONFIRM & ENTER", _start_match, true)
+    _button("BACK TO LOBBY", _show_main)
 
 func _show_multiplayer() -> void:
     _clear()
-    _heading("MULTIPLAYER", "Create or join a private local network room")
-    _section_card("PRIVATE ROOM", "Play together on the same Wi-Fi network.")
+    _top_bar()
+    _label("SQUAD ROOM", 23, GOLD, true)
+    _card("PRIVATE WI-FI ROOM", "Invite friends on the same Wi-Fi network. Share the host address with your team.")
     _button("CREATE ROOM", _host_room, true)
-    _label("JOIN AN EXISTING ROOM", 13)
+    _label("JOIN A FRIEND", 12, WHITE, true)
     var address := LineEdit.new()
-    address.name = "RoomAddress"
     address.placeholder_text = "Host IP address"
-    address.custom_minimum_size.y = 48
-    address.add_theme_stylebox_override("normal", _panel_style(Color(0.025, 0.05, 0.07, 1)))
+    address.custom_minimum_size.y = 45
+    address.add_theme_stylebox_override("normal", _style(Color(0.04, 0.05, 0.07, 1.0)))
     address.add_theme_color_override("font_color", WHITE)
-    address.add_theme_color_override("font_placeholder_color", MUTED)
     content.add_child(address)
     _button("JOIN ROOM", func(): _join_room(address))
-    status_label = _label("UP TO 16 PLAYERS     •     SAME WI-FI", 12)
-    _button("BACK TO HOME", _show_main)
+    status_label = _label("ROOM STATUS  •  NOT CONNECTED", 11, CYAN, true)
+    _button("BACK", _show_main)
 
 func _host_room() -> void:
     var network = get_node_or_null("/root/SessionNetwork")
@@ -280,7 +265,7 @@ func _host_room() -> void:
         status_label.text = "NETWORK SERVICE UNAVAILABLE"
         return
     var result: int = network.host_session()
-    status_label.text = "ROOM CREATED  •  " + network.get_local_ipv4() + ":7777" if result == OK else "ROOM CREATION FAILED: " + str(result)
+    status_label.text = "ROOM READY  •  " + network.get_local_ipv4() + ":7777" if result == OK else "ROOM ERROR: " + str(result)
 
 func _join_room(address: LineEdit) -> void:
     var network = get_node_or_null("/root/SessionNetwork")
@@ -288,20 +273,63 @@ func _join_room(address: LineEdit) -> void:
         status_label.text = "NETWORK SERVICE UNAVAILABLE"
         return
     var result: int = network.join_session(address.text.strip_edges())
-    status_label.text = "CONNECTING TO ROOM..." if result == OK else "JOIN FAILED: " + str(result)
+    status_label.text = "CONNECTING TO TEAM..." if result == OK else "JOIN ERROR: " + str(result)
+
+func _show_collection() -> void:
+    _clear()
+    _top_bar()
+    _label("COLLECTION", 24, GOLD, true)
+    _card("CHARACTER OUTFITS", "Choose an appearance for your player. These are cosmetic selections.")
+    _button("‹  PREVIOUS OUTFIT", func():
+        selected_outfit = posmod(selected_outfit - 1, outfits.size())
+        _show_collection()
+    )
+    _card("SELECTED LOOK", outfits[selected_outfit], CYAN)
+    _button("NEXT OUTFIT  ›", func():
+        selected_outfit = (selected_outfit + 1) % outfits.size()
+        _show_collection()
+    )
+    _button("BACK TO LOBBY", _show_main)
+
+func _show_events() -> void:
+    _clear()
+    _top_bar()
+    _label("FRONTIER EVENTS", 23, GOLD, true)
+    _card("ISLAND DISCOVERY", "Explore landmarks and discover hidden locations.")
+    _card("WEEKLY EXPLORER", "Visit three regions to complete this challenge.")
+    _card("TEAM-UP BONUS", "Play a session with friends to earn bonus experience.")
+    _button("BACK", _show_main)
+
+func _show_missions() -> void:
+    _clear()
+    _top_bar()
+    _label("DAILY MISSIONS", 23, GOLD, true)
+    _card("MISSION 01  •  EXPLORER", "Visit two landmarks.  Reward: 100 XP")
+    _card("MISSION 02  •  TEAM PLAYER", "Join a multiplayer room.  Reward: 150 XP")
+    _card("MISSION 03  •  COLLECTOR", "Find three island discoveries.  Reward: 200 XP")
+    _button("BACK", _show_main)
+
+func _show_profile() -> void:
+    _clear()
+    _top_bar()
+    _label("PLAYER PROFILE", 23, GOLD, true)
+    _card("PLAYER 01", "Level 1\nExperience: 0 XP\nTitle: Island Rookie\nStatus: Ready")
+    _card("CAREER STATS", "Your match and exploration statistics will appear here as they are recorded.")
+    _button("BACK", _show_main)
 
 func _show_settings() -> void:
     _clear()
-    _heading("SETTINGS", "Choose a balance between visuals and performance")
-    _section_card("GRAPHICS PRESET", "Lower settings may improve performance on older phones.")
+    _top_bar()
+    _label("SETTINGS", 23, GOLD, true)
+    _card("GRAPHICS QUALITY", "Choose the visual preset that best suits your phone.")
     var quality := OptionButton.new()
-    quality.custom_minimum_size = Vector2(0, 48)
+    quality.custom_minimum_size = Vector2(0, 46)
     quality.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     quality.add_item("LOW  •  PERFORMANCE")
     quality.add_item("MEDIUM  •  BALANCED")
     quality.add_item("HIGH  •  VISUAL QUALITY")
     quality.select(1)
-    quality.add_theme_stylebox_override("normal", _panel_style(Color(0.035, 0.075, 0.10, 1)))
+    quality.add_theme_stylebox_override("normal", _style(Color(0.08, 0.09, 0.11, 1.0)))
     quality.add_theme_color_override("font_color", WHITE)
     quality.item_selected.connect(func(index: int):
         var world := get_parent()
@@ -309,7 +337,7 @@ func _show_settings() -> void:
             world._apply_quality(index)
     )
     content.add_child(quality)
-    _button("BACK TO HOME", _show_main)
+    _button("BACK", _show_main)
 
 func _start_match() -> void:
     var sound = get_node_or_null("/root/SoundFX")
