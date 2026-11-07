@@ -13,7 +13,7 @@ Current prototype systems include:
 - Day/night lighting cycle and selectable clear/mist weather effects.
 - Eight collectible discoveries with local save progress.
 - Island field guide, objective HUD, FPS counter and graphics settings.
-- Experimental private ENet sessions with basic position synchronization. This is not public matchmaking or production multiplayer.
+- Private Wi-Fi LAN sessions using ENet, with host IP display and basic remote-player position synchronization. Both Android devices must be on the same Wi-Fi network.
 
 ## Build an Android APK with GitHub Actions
 
@@ -27,7 +27,7 @@ The workflow must finish successfully before an installable APK is available. If
 
 ## Multiplayer limitations
 
-Private ENet host/join is an early LAN experiment. It has no dedicated server, matchmaking, account identity, server-side validation, reconnection, relay/NAT traversal, moderation or hosted infrastructure. Do not expose a personal device directly to untrusted internet traffic.
+Wi-Fi multiplayer currently uses direct LAN host/join on port 7777. The host shares the displayed local IP address with other players. Bluetooth transport, automatic room discovery, dedicated servers, matchmaking, account identity, server-side validation, reconnection and relay/NAT traversal are not implemented. Do not expose a personal device directly to untrusted internet traffic.
 
 ## Device testing
 
