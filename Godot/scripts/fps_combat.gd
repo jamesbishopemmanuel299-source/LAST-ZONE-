@@ -25,6 +25,9 @@ var weapon_root: Node3D
 var hit_marker: Label
 var damage_overlay: ColorRect
 var muzzle_light: OmniLight3D
+var weapon_label: Label
+var weapon_index := 0
+var weapon_names := ["RIFLE", "SMG"]
 
 func _ready() -> void:
     ammo = magazine_size
@@ -140,6 +143,11 @@ func _build_hud() -> void:
     damage_overlay.color = Color(0.8, 0.015, 0.025, 0.0)
     layer.add_child(damage_overlay)
     damage_overlay.show_behind_parent = true
+    weapon_label = Label.new()
+    weapon_label.position = Vector2(26, 48)
+    weapon_label.add_theme_font_size_override("font_size", 18)
+    weapon_label.add_theme_color_override("font_color", Color(0.35, 0.82, 1.0))
+    layer.add_child(weapon_label)
     ammo_label = Label.new()
     ammo_label.position = Vector2(26, 118)
     ammo_label.add_theme_font_size_override("font_size", 20)
@@ -155,14 +163,28 @@ func _build_hud() -> void:
     status_label.add_theme_font_size_override("font_size", 14)
     status_label.add_theme_color_override("font_color", Color(0.45, 0.85, 1.0))
     layer.add_child(status_label)
-    fire_button = _make_button(layer, "FIRE", Vector2(1090, 500), Vector2(150, 76))
+    fire_button = _make_button(layer, "SHOOT", Vector2(1080, 500), Vector2(150, 86))
     fire_button.button_down.connect(_start_firing)
     fire_button.button_up.connect(_stop_firing)
-    reload_button = _make_button(layer, "RELOAD", Vector2(1010, 600), Vector2(125, 54))
+    reload_button = _make_button(layer, "RELOAD", Vector2(1080, 610), Vector2(125, 54))
     reload_button.pressed.connect(_begin_reload)
-    aim_button = _make_button(layer, "AIM", Vector2(1150, 600), Vector2(90, 54))
+    aim_button = _make_button(layer, "AIM", Vector2(930, 515), Vector2(112, 62))
     aim_button.toggle_mode = true
     aim_button.toggled.connect(_set_aim)
+    var jump_button := _make_button(layer, "JUMP", Vector2(1100, 390), Vector2(105, 58))
+    _bind_hold_action(jump_button, "jump")
+    var sprint_button := _make_button(layer, "SPRINT", Vector2(940, 390), Vector2(120, 58))
+    _bind_hold_action(sprint_button, "sprint")
+    var switch_button := _make_button(layer, "SWITCH", Vector2(930, 610), Vector2(120, 54))
+    switch_button.pressed.connect(_switch_weapon)
+    var forward_button := _make_button(layer, "▲", Vector2(104, 450), Vector2(64, 54))
+    _bind_hold_action(forward_button, "move_forward")
+    var back_button := _make_button(layer, "▼", Vector2(104, 575), Vector2(64, 54))
+    _bind_hold_action(back_button, "move_back")
+    var left_button := _make_button(layer, "◀", Vector2(34, 512), Vector2(64, 54))
+    _bind_hold_action(left_button, "move_left")
+    var right_button := _make_button(layer, "▶", Vector2(174, 512), Vector2(64, 54))
+    _bind_hold_action(right_button, "move_right")
     _refresh_hud()
 
 func _make_button(layer: CanvasLayer, caption: String, at: Vector2, size: Vector2) -> Button:
@@ -206,12 +228,28 @@ func _process(delta: float) -> void:
         weapon_root.position.x = lerpf(weapon_root.position.x, 0.25 if aiming else 0.32, minf(delta * 10.0, 1.0))
 
 func _start_firing() -> void:
-    _fire()
-    if not InputMap.has_action("fire_touch"):
-        InputMap.add_action("fire_touch")
+    Input.action_press("fire")
 
 func _stop_firing() -> void:
-    pass
+    Input.action_release("fire")
+
+func _bind_hold_action(button: Button, action_name: String) -> void:
+    button.button_down.connect(func(): Input.action_press(action_name))
+    button.button_up.connect(func(): Input.action_release(action_name))
+
+func _switch_weapon() -> void:
+    weapon_index = (weapon_index + 1) % weapon_names.size()
+    if weapon_index == 0:
+        magazine_size = 30
+        damage_per_shot = 34.0
+        fire_interval = 0.12
+    else:
+        magazine_size = 40
+        damage_per_shot = 22.0
+        fire_interval = 0.075
+    ammo = mini(ammo, magazine_size)
+    reserve_ammo = 120 if weapon_index == 0 else 160
+    _refresh_hud()
 
 func _fire() -> void:
     if reloading or fire_timer > 0.0 or (player_health != null and player_health.defeated):
@@ -262,7 +300,9 @@ func _set_aim(enabled: bool) -> void:
 
 func _refresh_hud() -> void:
     if ammo_label != null:
-        ammo_label.text = "RIFLE   %02d / %03d" % [ammo, reserve_ammo]
+        ammo_label.text = "%s   %02d / %03d" % [weapon_names[weapon_index], ammo, reserve_ammo]
+    if weapon_label != null:
+        weapon_label.text = "LOADOUT  /  " + weapon_names[weapon_index]
     if status_label != null and not reloading:
         status_label.text = "READY  •  " + ("AIMING" if aiming else "HIP FIRE")
 
