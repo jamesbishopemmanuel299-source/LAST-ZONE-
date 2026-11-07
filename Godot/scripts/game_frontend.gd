@@ -35,69 +35,102 @@ func _show_frontend() -> void:
 func _build_shell() -> void:
     shade = ColorRect.new()
     shade.name = "FrontEndShade"
-    shade.color = Color(0.015, 0.025, 0.04, 0.88)
+    shade.color = Color(0.008, 0.016, 0.028, 0.94)
     shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
     add_child(shade)
+
     var backdrop := ColorRect.new()
-    backdrop.color = Color(0.025, 0.055, 0.085, 0.52)
+    backdrop.color = Color(0.025, 0.075, 0.11, 0.42)
     backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
     shade.add_child(backdrop)
+
     var frame := PanelContainer.new()
     frame.name = "MenuFrame"
-    frame.set_anchors_preset(Control.PRESET_CENTER)
-    frame.offset_left = -330
-    frame.offset_top = -300
-    frame.offset_right = 330
-    frame.offset_bottom = 300
+    frame.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    frame.offset_left = 18
+    frame.offset_top = 18
+    frame.offset_right = -18
+    frame.offset_bottom = -18
     var style := StyleBoxFlat.new()
-    style.bg_color = PANEL
-    style.border_color = Color(0.52, 0.67, 0.78, 0.95)
+    style.bg_color = Color(0.025, 0.045, 0.065, 0.98)
+    style.border_color = Color(0.16, 0.55, 0.76, 0.95)
     style.set_border_width_all(2)
-    style.set_corner_radius_all(12)
-    style.content_margin_left = 28
-    style.content_margin_right = 28
-    style.content_margin_top = 22
-    style.content_margin_bottom = 22
+    style.set_corner_radius_all(18)
+    style.content_margin_left = 20
+    style.content_margin_right = 20
+    style.content_margin_top = 18
+    style.content_margin_bottom = 18
     frame.add_theme_stylebox_override("panel", style)
     shade.add_child(frame)
+
+    var scroll := ScrollContainer.new()
+    scroll.name = "MenuScroll"
+    scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+    scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+    frame.add_child(scroll)
+
     content = VBoxContainer.new()
+    content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
     content.add_theme_constant_override("separation", 12)
-    frame.add_child(content)
+    scroll.add_child(content)
 
 func _clear() -> void:
     for child in content.get_children():
         child.queue_free()
 
 func _heading(title_text: String, subtitle_text: String = "") -> void:
+    var eyebrow := Label.new()
+    eyebrow.text = "◈  LAST-ZONE  /  TACTICAL OPERATIONS"
+    eyebrow.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    eyebrow.add_theme_font_size_override("font_size", 12)
+    eyebrow.add_theme_color_override("font_color", BLUE)
+    content.add_child(eyebrow)
+
     var title := Label.new()
     title.text = title_text
     title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     title.add_theme_font_size_override("font_size", 34)
-    title.add_theme_color_override("font_color", Color.WHITE)
+    title.add_theme_color_override("font_color", Color(0.94, 0.97, 1.0))
     content.add_child(title)
+
     if not subtitle_text.is_empty():
         var subtitle := Label.new()
         subtitle.text = subtitle_text
         subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-        subtitle.add_theme_font_size_override("font_size", 14)
+        subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+        subtitle.add_theme_font_size_override("font_size", 13)
         subtitle.add_theme_color_override("font_color", MUTED)
         content.add_child(subtitle)
+
+    var line := ColorRect.new()
+    line.custom_minimum_size = Vector2(0, 2)
+    line.color = Color(0.12, 0.48, 0.68, 0.8)
+    content.add_child(line)
 
 func _button(caption: String, callback: Callable, accent: bool = false) -> Button:
     var button := Button.new()
     button.text = caption
-    button.custom_minimum_size = Vector2(0, 48)
+    button.custom_minimum_size = Vector2(0, 54)
     button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-    button.add_theme_font_size_override("font_size", 18)
+    button.add_theme_font_size_override("font_size", 17)
     button.add_theme_color_override("font_color", Color.WHITE)
-    var style := StyleBoxFlat.new()
-    style.bg_color = Color(0.04, 0.62, 0.43, 0.96) if accent else Color(0.10, 0.14, 0.18, 0.96)
-    style.border_color = Color(0.88, 0.92, 0.96, 0.85)
-    style.set_border_width_all(1)
-    style.set_corner_radius_all(7)
-    button.add_theme_stylebox_override("normal", style)
-    button.add_theme_stylebox_override("hover", style)
-    button.add_theme_stylebox_override("pressed", style)
+    button.add_theme_color_override("font_hover_color", Color.WHITE)
+    var normal := StyleBoxFlat.new()
+    normal.bg_color = Color(0.035, 0.42, 0.58, 0.98) if accent else Color(0.075, 0.12, 0.16, 0.98)
+    normal.border_color = Color(0.18, 0.62, 0.82, 0.9) if accent else Color(0.20, 0.30, 0.38, 0.95)
+    normal.set_border_width_all(1)
+    normal.set_corner_radius_all(11)
+    normal.content_margin_left = 12
+    normal.content_margin_right = 12
+    var hover := normal.duplicate()
+    hover.bg_color = Color(0.05, 0.53, 0.70, 1.0) if accent else Color(0.11, 0.19, 0.25, 1.0)
+    var pressed := normal.duplicate()
+    pressed.bg_color = Color(0.025, 0.32, 0.45, 1.0)
+    button.add_theme_stylebox_override("normal", normal)
+    button.add_theme_stylebox_override("hover", hover)
+    button.add_theme_stylebox_override("pressed", pressed)
+    button.add_theme_stylebox_override("focus", hover)
     button.pressed.connect(callback)
     content.add_child(button)
     return button
@@ -113,14 +146,52 @@ func _label(caption: String, size: int = 17) -> Label:
 
 func _show_main() -> void:
     _clear()
-    _heading("LAST ZONE", "TACTICAL FPS  •  ANDROID EDITION")
-    _label("PLAYER  /  " + str(OS.get_name()), 13)
-    _button("SINGLE PLAYER", _show_lobby, true)
-    _button("MULTIPLAYER", _show_multiplayer)
-    _button("WEAPON LOADOUT", _show_weapons)
-    _button("SETTINGS", _show_settings)
-    _button("STORE", func(): _show_notice("STORE", "The in-game store will be added in a later update."))
-    _label("Offline practice available  •  Version 2.0", 12)
+    _heading("ENTER THE LAST ZONE", "TACTICAL COMBAT  •  ANDROID EDITION")
+
+    var feature := PanelContainer.new()
+    var feature_style := StyleBoxFlat.new()
+    feature_style.bg_color = Color(0.045, 0.11, 0.15, 0.98)
+    feature_style.border_color = Color(0.12, 0.47, 0.65, 0.95)
+    feature_style.set_border_width_all(1)
+    feature_style.set_corner_radius_all(14)
+    feature_style.content_margin_left = 14
+    feature_style.content_margin_right = 14
+    feature_style.content_margin_top = 14
+    feature_style.content_margin_bottom = 14
+    feature.add_theme_stylebox_override("panel", feature_style)
+    content.add_child(feature)
+
+    var feature_box := VBoxContainer.new()
+    feature_box.add_theme_constant_override("separation", 6)
+    feature.add_child(feature_box)
+
+    var feature_title := Label.new()
+    feature_title.text = "OPERATION: LAST STAND"
+    feature_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    feature_title.add_theme_font_size_override("font_size", 20)
+    feature_title.add_theme_color_override("font_color", Color(0.88, 0.96, 1.0))
+    feature_box.add_child(feature_title)
+
+    var feature_info := Label.new()
+    feature_info.text = "Choose your arena, set the challenge and deploy."
+    feature_info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    feature_info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    feature_info.add_theme_font_size_override("font_size", 13)
+    feature_info.add_theme_color_override("font_color", MUTED)
+    feature_box.add_child(feature_info)
+
+    _label("QUICK DEPLOY  •  " + maps[selected_map] + "  •  " + str(selected_bots) + " BOTS", 12)
+    _button("▶   PLAY NOW", _show_lobby, true)
+    _button("◈   MULTIPLAYER", _show_multiplayer)
+    _button("▣   WEAPON LOADOUT", _show_weapons)
+    _button("⚙   SETTINGS", _show_settings)
+
+    var footer := Label.new()
+    footer.text = "OFFLINE PRACTICE AVAILABLE     •     BUILD 2.1"
+    footer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    footer.add_theme_font_size_override("font_size", 11)
+    footer.add_theme_color_override("font_color", Color(0.43, 0.57, 0.66))
+    content.add_child(footer)
 
 func _show_weapons() -> void:
     _clear()
