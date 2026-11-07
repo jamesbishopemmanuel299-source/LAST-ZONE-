@@ -138,7 +138,7 @@ jobs:
           echo "Android export preset:"
           cat Godot/export_presets.cfg
 
-      - name: Export universal ARM64 Android APK
+      - name: Export ARM64 Android APK
         shell: bash
         run: |
           set -euxo pipefail
@@ -147,6 +147,24 @@ jobs:
           export GODOT_ANDROID_KEYSTORE_DEBUG_PATH="$HOME/.android/debug.keystore"
           export GODOT_ANDROID_KEYSTORE_DEBUG_USER="androiddebugkey"
           export GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD="android"
+          # Populate the preset's three debug-signing fields in the CI workspace.
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          path = Path("Godot/export_presets.cfg")
+          data = path.read_text()
+          replacements = {
+              'keystore/debug=""': 'keystore/debug="' + os.environ["GODOT_ANDROID_KEYSTORE_DEBUG_PATH"] + '"',
+              'keystore/debug_user=""': 'keystore/debug_user="' + os.environ["GODOT_ANDROID_KEYSTORE_DEBUG_USER"] + '"',
+              'keystore/debug_password=""': 'keystore/debug_password="' + os.environ["GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD"] + '"',
+          }
+          for old, new in replacements.items():
+              if old not in data:
+                  raise SystemExit("Missing expected Android preset field: " + old)
+              data = data.replace(old, new, 1)
+          path.write_text(data)
+          print("Android debug signing fields configured.")
+          PY
           export ANDROID_HOME="$ANDROID_HOME"
           export ANDROID_SDK_ROOT="$ANDROID_HOME"
           export JAVA_HOME="$JAVA_HOME"
@@ -156,12 +174,12 @@ jobs:
           "$GODOT_BIN" --headless --editor --path Godot --quit --verbose
           # Export with the debug keystore supplied through Godot's documented environment variables.
           "$GODOT_BIN" --headless --path Godot --verbose --export-debug "Android" "$GITHUB_WORKSPACE/build/LAST-ZONE-Android-arm64.apk"
-          test -s build/LAST-ZONE-Android-universal.apk
+          test -s build/LAST-ZONE-Android-arm64.apk
 
       - name: Upload installable APK
         uses: actions/upload-artifact@v4
         with:
           name: LAST-ZONE-Android-APK
-          path: build/LAST-ZONE-Android-universal.apk
+          path: build/LAST-ZONE-Android-arm64.apk
           if-no-files-found: error
           retention-days: 14
