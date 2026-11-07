@@ -26,6 +26,7 @@ func _ready() -> void:
     _make_paths()
     _make_expanded_island()
     _make_landmarks()
+    _make_district_details()
     _make_forest()
     _make_beacon()
     environment_ref = get_node_or_null("WorldEnvironment") as WorldEnvironment
@@ -86,6 +87,46 @@ func _make_paths() -> void:
     for index in range(12):
         var marker_z := -48.0 + float(index) * 8.0
         _box(self, "TrailMarker", Vector3(0, 0.08, marker_z), Vector3(0.22, 0.08, 1.1), _mat(Color(0.72, 0.67, 0.48)))
+
+# Extra low-poly district dressing: recognizable landmarks without heavy asset packs.
+func _make_district_details() -> void:
+    var trim := _mat(Color(0.72, 0.57, 0.31))
+    var sign_glow := _mat(Color(0.12, 0.68, 0.88), true)
+    var concrete := _mat(Color(0.25, 0.29, 0.31))
+    # Harbor market awnings and loading crates.
+    for i in range(4):
+        var x := 64.0 + float(i % 2) * 34.0
+        var z := 88.0 + float(i / 2) * 8.0
+        _box(self, "MarketAwning_%02d" % i, Vector3(x, 3.25, z), Vector3(6.0, 0.22, 3.0), trim)
+        _box(self, "MarketCrate_%02d" % i, Vector3(x + 4.0, 0.65, z + 3.0), Vector3(1.2, 1.2, 1.2), wood_material, true)
+    # District identity signs.
+    _district_sign("HARBOR VILLAGE", Vector3(85, 0, 28), trim, sign_glow)
+    _district_sign("RESEARCH CAMPUS", Vector3(-78, 0, -82), concrete, sign_glow)
+    _district_sign("NORTH LOOKOUT", Vector3(-38, 0, -45), wood_material, sign_glow)
+    # Roadside lamps help landmarks read clearly at a distance.
+    for i in range(12):
+        var side := -1.0 if i % 2 == 0 else 1.0
+        var z := -132.0 + float(i) * 24.0
+        var pole := _box(self, "RoadLampPole_%02d" % i, Vector3(12 + side * 7.0, 2.2, z), Vector3(0.18, 4.4, 0.18), dark_material)
+        _box(self, "RoadLampHead_%02d" % i, Vector3(12 + side * 7.0, 4.45, z), Vector3(0.8, 0.18, 0.35), sign_glow)
+    # Small boulders and shrubs create a more natural coastal edge.
+    for i in range(24):
+        var angle := TAU * float(i) / 24.0
+        var radius := 190.0 + float(i % 3) * 2.0
+        var rock := MeshInstance3D.new()
+        var rock_mesh := SphereMesh.new()
+        rock_mesh.radius = 1.0
+        rock_mesh.height = 1.2
+        rock.mesh = rock_mesh
+        rock.material_override = stone_material
+        rock.scale = Vector3(1.5, 0.75, 1.0)
+        rock.position = Vector3(cos(angle) * radius, 0.45, sin(angle) * radius)
+        add_child(rock)
+
+func _district_sign(title_text: String, at: Vector3, base_material: Material, lettering: Material) -> void:
+    _box(self, title_text.replace(" ", "") + "SignPost", at + Vector3(0, 1.5, 0), Vector3(0.22, 3.0, 0.22), base_material)
+    _box(self, title_text.replace(" ", "") + "Board", at + Vector3(0, 2.7, 0), Vector3(5.8, 1.1, 0.18), base_material)
+    _box(self, title_text.replace(" ", "") + "Marker", at + Vector3(0, 2.7, -0.11), Vector3(4.8, 0.12, 0.05), lettering)
 
 func _make_cabin(at: Vector3, label: String) -> void:
     var building := Node3D.new()
