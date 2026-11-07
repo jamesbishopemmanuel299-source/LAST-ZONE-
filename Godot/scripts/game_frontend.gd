@@ -131,7 +131,12 @@ func _button(caption: String, callback: Callable, accent: bool = false) -> Butto
     button.add_theme_stylebox_override("hover", hover)
     button.add_theme_stylebox_override("pressed", pressed)
     button.add_theme_stylebox_override("focus", hover)
-    button.pressed.connect(callback)
+    button.pressed.connect(func():
+        var sound = get_node_or_null("/root/SoundFX")
+        if sound != null:
+            sound.play_ui()
+        callback.call()
+    )
     content.add_child(button)
     return button
 
@@ -301,6 +306,9 @@ func _show_notice(title_text: String, message: String) -> void:
     _button("BACK", _show_main)
 
 func _start_match() -> void:
+    var sound = get_node_or_null("/root/SoundFX")
+    if sound != null:
+        sound.play_confirm()
     var world := get_parent()
     if world != null and world.has_method("configure_bots"):
         world.configure_bots(selected_bots)
