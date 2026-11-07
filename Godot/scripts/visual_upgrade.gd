@@ -37,19 +37,19 @@ func _upgrade_environment() -> void:
     env.tonemap_white = 5.0
     env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
     env.ambient_light_color = Color(0.48, 0.57, 0.68)
-    env.ambient_light_energy = 0.72
+    env.ambient_light_energy = 0.84
     env.reflected_light_source = Environment.REFLECTION_SOURCE_BG
     env.glow_enabled = true
-    env.glow_intensity = 0.32
-    env.glow_strength = 0.55
-    env.glow_bloom = 0.08
+    env.glow_intensity = 0.26
+    env.glow_strength = 0.62
+    env.glow_bloom = 0.06
     env.adjustment_enabled = true
     env.adjustment_brightness = 1.02
     env.adjustment_contrast = 1.08
     env.adjustment_saturation = 1.12
     env.fog_enabled = true
     env.fog_light_color = Color(0.38, 0.48, 0.58)
-    env.fog_density = 0.0022
+    env.fog_density = 0.0018
     env.fog_sky_affect = 0.35
 
 func _upgrade_sun() -> void:
@@ -60,19 +60,35 @@ func _upgrade_sun() -> void:
     sun.light_energy = 1.15
     sun.shadow_enabled = true
     sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS
-    sun.directional_shadow_max_distance = 75.0
-    sun.shadow_bias = 0.035
-    sun.shadow_normal_bias = 1.4
+    sun.directional_shadow_max_distance = 100.0
+    sun.shadow_bias = 0.025
+    sun.shadow_normal_bias = 1.0
+    sun.light_angular_distance = 0.35
 
 func _upgrade_ground() -> void:
     var ground_mesh := get_node_or_null("Ground/Mesh") as MeshInstance3D
     if ground_mesh == null:
         return
     var ground_mat := StandardMaterial3D.new()
-    ground_mat.albedo_color = Color(0.19, 0.24, 0.19)
-    ground_mat.roughness = 0.82
-    ground_mat.metallic = 0.02
+    ground_mat.albedo_color = Color(0.72, 0.78, 0.68)
+    ground_mat.roughness = 0.94
+    ground_mat.metallic = 0.0
     ground_mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+
+    # Procedural surface variation adds visible terrain detail without large asset files.
+    var terrain_noise := FastNoiseLite.new()
+    terrain_noise.seed = 417
+    terrain_noise.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
+    terrain_noise.frequency = 0.035
+    terrain_noise.fractal_octaves = 4
+    terrain_noise.fractal_gain = 0.48
+    var terrain_texture := NoiseTexture2D.new()
+    terrain_texture.noise = terrain_noise
+    terrain_texture.width = 512
+    terrain_texture.height = 512
+    terrain_texture.seamless = true
+    ground_mat.albedo_texture = terrain_texture
+    ground_mat.uv1_scale = Vector3(26.0, 26.0, 1.0)
     ground_mesh.material_override = ground_mat
 
 func _add_weather() -> void:
@@ -196,12 +212,12 @@ func _apply_quality(level: int) -> void:
     var world := get_node_or_null("WorldEnvironment") as WorldEnvironment
     if sun:
         sun.shadow_enabled = quality >= 1
-        sun.directional_shadow_max_distance = 88.0 if quality >= 2 else 42.0
+        sun.directional_shadow_max_distance = 105.0 if quality >= 2 else (62.0 if quality == 1 else 24.0)
         sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS if quality >= 2 else DirectionalLight3D.SHADOW_ORTHOGONAL
     if world and world.environment:
         world.environment.glow_enabled = quality >= 1
         world.environment.fog_enabled = quality >= 1
-        world.environment.ambient_light_energy = 0.72 if quality == 0 else (0.82 if quality == 1 else 0.9)
+        world.environment.ambient_light_energy = 0.78 if quality == 0 else (0.86 if quality == 1 else 0.94)
     if weather_particles:
         weather_particles.amount = 520 if quality >= 2 else (220 if quality == 1 else 0)
         weather_particles.emitting = quality >= 1 and weather_particles.get_meta("weather_active", false)
