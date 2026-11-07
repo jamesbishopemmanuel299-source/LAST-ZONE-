@@ -21,6 +21,12 @@ func host_session(port: int = DEFAULT_PORT) -> int:
         session_status_changed.emit("Hosting private room on port " + str(port))
     return result
 
+func get_local_ipv4() -> String:
+    for address in IP.get_local_addresses():
+        if not address.contains(":") and not address.begins_with("127.") and not address.begins_with("169.254."):
+            return address
+    return "LOCAL IP UNAVAILABLE"
+
 func join_session(address: String, port: int = DEFAULT_PORT) -> int:
     if address.is_empty():
         return ERR_INVALID_PARAMETER
