@@ -353,6 +353,8 @@ func _show_settings() -> void:
     _clear()
     _top_bar()
     _label("SETTINGS", 23, GOLD, true)
+    var settings := ConfigFile.new()
+    settings.load("user://last_zone_settings.cfg")
     _card("GRAPHICS QUALITY", "Choose the visual preset that best suits your phone.")
     var quality := OptionButton.new()
     quality.custom_minimum_size = Vector2(0, 46)
@@ -360,16 +362,58 @@ func _show_settings() -> void:
     quality.add_item("LOW  •  PERFORMANCE")
     quality.add_item("MEDIUM  •  BALANCED")
     quality.add_item("HIGH  •  VISUAL QUALITY")
-    quality.select(1)
+    var saved_quality := clampi(int(settings.get_value("graphics", "quality", 1)), 0, 2)
+    quality.select(saved_quality)
     quality.add_theme_stylebox_override("normal", _style(Color(0.08, 0.09, 0.11, 1.0)))
     quality.add_theme_color_override("font_color", WHITE)
     quality.item_selected.connect(func(index: int):
         var world := get_parent()
         if world.has_method("_apply_quality"):
             world._apply_quality(index)
+        _store_setting("graphics", "quality", index)
     )
     content.add_child(quality)
+    _card("AUDIO", "Adjust interface and game sound effects.")
+    var sound_enabled := bool(settings.get_value("audio", "enabled", true))
+    var sound_toggle := CheckButton.new()
+    sound_toggle.text = "SOUND EFFECTS"
+    sound_toggle.button_pressed = sound_enabled
+    sound_toggle.add_theme_color_override("font_color", WHITE)
+    sound_toggle.toggled.connect(func(enabled: bool):
+        var sound = get_node_or_null("/root/SoundFX")
+        if sound != null:
+            sound.set_enabled(enabled)
+        _store_setting("audio", "enabled", enabled)
+    )
+    content.add_child(sound_toggle)
+    var volume_label := _label("SOUND VOLUME  •  %d%%" % int(float(settings.get_value("audio", "volume", 0.65)) * 100.0), 12, CYAN)
+    var volume_slider := HSlider.new()
+    volume_slider.min_value = 0.0
+    volume_slider.max_value = 1.0
+    volume_slider.step = 0.05
+    volume_slider.value = clampf(float(settings.get_value("audio", "volume", 0.65)), 0.0, 1.0)
+    volume_slider.custom_minimum_size = Vector2(0, 36)
+    volume_slider.value_changed.connect(func(value: float):
+        volume_label.text = "SOUND VOLUME  •  %d%%" % int(value * 100.0)
+        var sound = get_node_or_null("/root/SoundFX")
+        if sound != null:
+            sound.set_volume(value)
+        _store_setting("audio", "volume", value)
+    )
+    content.add_child(volume_slider)
+    var sound = get_node_or_null("/root/SoundFX")
+    if sound != null:
+        sound.set_enabled(sound_enabled)
+        sound.set_volume(volume_slider.value)
     _button("BACK", _show_main)
+
+func _store_setting(section: String, key: String, value: Variant) -> void:
+    var settings := ConfigFile.new()
+    settings.load("user://last_zone_settings.cfg")
+    settings.set_value(section, key, value)
+    var result := settings.save("user://last_zone_settings.cfg")
+    if result != OK:
+        push_warning("Could not save LAST-ZONE settings: " + str(result))
 
 func _start_match() -> void:
     var sound = get_node_or_null("/root/SoundFX")
