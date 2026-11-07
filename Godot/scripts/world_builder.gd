@@ -553,13 +553,17 @@ func _open_settings(layer: CanvasLayer) -> void:
     stack.add_child(close)
 
 func _apply_quality(index: int) -> void:
+    var visual := get_node_or_null("VisualUpgrade")
+    if visual != null and visual.has_method("_apply_quality"):
+        visual.call("_apply_quality", clampi(index, 0, 2))
+        return
     var sun := get_node_or_null("Sun")
     if sun is DirectionalLight3D:
-        sun.shadow_enabled = index == 2
+        sun.shadow_enabled = index >= 1
     var environment_node := get_node_or_null("WorldEnvironment")
     if environment_node is WorldEnvironment and environment_node.environment:
-        environment_node.environment.glow_enabled = index == 2
-        environment_node.environment.fog_enabled = index != 0
+        environment_node.environment.glow_enabled = index >= 1
+        environment_node.environment.fog_enabled = index >= 1
 
 
 func _process(delta: float) -> void:
@@ -690,20 +694,28 @@ func _make_weather_button() -> void:
     button.custom_minimum_size = Vector2(170, 38)
     button.pressed.connect(func():
         weather_mode = (weather_mode + 1) % 3
+        var visual := get_node_or_null("VisualUpgrade")
         if weather_mode == 0:
             button.text = "WEATHER: CLEAR"
+            if visual != null and visual.has_method("set_weather"):
+                visual.set_weather(0)
             if environment_ref and environment_ref.environment:
                 environment_ref.environment.fog_enabled = true
-                environment_ref.environment.fog_density = 0.003
+                environment_ref.environment.fog_density = 0.0022
         elif weather_mode == 1:
+            button.text = "WEATHER: RAIN"
+            if visual != null and visual.has_method("set_weather"):
+                visual.set_weather(1)
+            if environment_ref and environment_ref.environment:
+                environment_ref.environment.fog_enabled = true
+                environment_ref.environment.fog_density = 0.004
+        else:
             button.text = "WEATHER: MIST"
+            if visual != null and visual.has_method("set_weather"):
+                visual.set_weather(0)
             if environment_ref and environment_ref.environment:
                 environment_ref.environment.fog_enabled = true
                 environment_ref.environment.fog_density = 0.012
-        else:
-            button.text = "WEATHER: CLEAR AIR"
-            if environment_ref and environment_ref.environment:
-                environment_ref.environment.fog_enabled = false
     )
     layer.add_child(button)
 
