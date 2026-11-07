@@ -40,6 +40,7 @@ func _ready() -> void:
     _make_landmarks()
     _make_district_details()
     _make_forest()
+    _make_ground_cover()
     _make_beacon()
     environment_ref = get_node_or_null("WorldEnvironment") as WorldEnvironment
     sun_ref = get_node_or_null("Sun") as DirectionalLight3D
@@ -219,6 +220,55 @@ func _make_forest() -> void:
         rock.position = Vector3(x, 0.55, z)
         rock.rotation_degrees = Vector3(float(index * 13), float(index * 31), 0)
         add_child(rock)
+
+
+# Instanced low-poly ground cover adds close-range detail with one draw call.
+func _make_ground_cover() -> void:
+    var rng := RandomNumberGenerator.new()
+    rng.seed = 20261107
+    var blade_material := StandardMaterial3D.new()
+    blade_material.albedo_color = Color(0.22, 0.38, 0.19)
+    blade_material.roughness = 1.0
+    blade_material.cull_mode = BaseMaterial3D.CULL_DISABLED
+    var blade_mesh := PrismMesh.new()
+    blade_mesh.size = Vector3(0.16, 0.72, 0.12)
+    blade_mesh.material = blade_material
+
+    var multimesh := MultiMesh.new()
+    multimesh.transform_format = MultiMesh.TRANSFORM_3D
+    multimesh.mesh = blade_mesh
+    multimesh.instance_count = 640
+    for index in range(multimesh.instance_count):
+        var angle := rng.randf_range(0.0, TAU)
+        var radius := rng.randf_range(20.0, 172.0)
+        var x := cos(angle) * radius
+        var z := sin(angle) * radius
+        var pos := Vector3(x, 0.0, z)
+        var scale := Vector3(rng.randf_range(0.65, 1.35), rng.randf_range(0.55, 1.25), rng.randf_range(0.65, 1.35))
+        var basis := Basis(Vector3.UP, rng.randf_range(0.0, TAU)).scaled(scale)
+        multimesh.set_instance_transform(index, Transform3D(basis, pos))
+
+    var cover := MultiMeshInstance3D.new()
+    cover.name = "InstancedGrassDetail"
+    cover.multimesh = multimesh
+    cover.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    add_child(cover)
+
+    # Small scattered stones break up large flat areas without physics overhead.
+    var stone_mat := _mat(Color(0.34, 0.37, 0.36))
+    for index in range(36):
+        var angle := rng.randf_range(0.0, TAU)
+        var radius := rng.randf_range(18.0, 165.0)
+        var stone := MeshInstance3D.new()
+        var mesh := SphereMesh.new()
+        mesh.radius = rng.randf_range(0.16, 0.42)
+        mesh.height = mesh.radius * 1.25
+        stone.mesh = mesh
+        stone.material_override = stone_mat
+        stone.position = Vector3(cos(angle) * radius, 0.08, sin(angle) * radius)
+        stone.scale = Vector3(1.3, 0.55, 0.9)
+        stone.rotation.y = rng.randf_range(0.0, TAU)
+        add_child(stone)
 
 func _make_beacon() -> void:
     var base := MeshInstance3D.new()
