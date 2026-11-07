@@ -241,6 +241,9 @@ func _apply_quality(level: int) -> void:
     if world and world.environment:
         world.environment.glow_enabled = quality >= 1
         world.environment.fog_enabled = quality >= 1
+        world.environment.ssao_enabled = quality >= 1
+        world.environment.ssr_enabled = quality >= 2
+        world.environment.ssao_intensity = 0.75 if quality == 1 else 1.15
         world.environment.ambient_light_energy = 0.78 if quality == 0 else (0.86 if quality == 1 else 0.94)
     if weather_particles:
         weather_particles.amount = 520 if quality >= 2 else (220 if quality == 1 else 0)
