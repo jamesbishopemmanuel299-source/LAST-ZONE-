@@ -255,9 +255,15 @@ func _fire() -> void:
     if reloading or fire_timer > 0.0 or (player_health != null and player_health.defeated):
         return
     if ammo <= 0:
+        var sound = get_node_or_null("/root/SoundFX")
+        if sound != null:
+            sound.play_empty()
         status_label.text = "MAGAZINE EMPTY — RELOAD"
         return
     ammo -= 1
+    var sound = get_node_or_null("/root/SoundFX")
+    if sound != null:
+        sound.play_shot()
     fire_timer = fire_interval
     if muzzle_light != null:
         muzzle_light.light_energy = 2.8
@@ -283,6 +289,9 @@ func _fire() -> void:
     if target != null and target.has_method("apply_damage"):
         target.call("apply_damage", damage_per_shot)
         status_label.text = "TARGET HIT"
+        var sound = get_node_or_null("/root/SoundFX")
+        if sound != null:
+            sound.play_hit()
         _show_hit_marker()
     else:
         status_label.text = "IMPACT"
@@ -291,6 +300,9 @@ func _begin_reload() -> void:
     if reloading or ammo >= magazine_size or reserve_ammo <= 0:
         return
     reloading = true
+    var sound = get_node_or_null("/root/SoundFX")
+    if sound != null:
+        sound.play_reload()
     reload_timer = reload_duration
     status_label.text = "RELOADING..."
     _refresh_hud()
