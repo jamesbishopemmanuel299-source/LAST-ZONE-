@@ -464,7 +464,29 @@ func _start_game(shade: ColorRect, panel: PanelContainer) -> void:
 # Expanded island: distinct exploration regions, shoreline, roads and landmarks.
 func _make_expanded_island() -> void:
     var sand := _mat(Color(0.58, 0.49, 0.32))
-    var water := _mat(Color(0.035, 0.22, 0.31))
+    var water_shader := Shader.new()
+    water_shader.code = """
+shader_type spatial;
+render_mode cull_disabled, diffuse_burley, specular_schlick_ggx;
+uniform vec4 deep_water : source_color = vec4(0.018, 0.12, 0.20, 1.0);
+uniform vec4 shallow_water : source_color = vec4(0.035, 0.34, 0.39, 1.0);
+uniform float wave_height = 0.12;
+void vertex() {
+    float wave_a = sin(VERTEX.x * 0.055 + TIME * 0.85);
+    float wave_b = cos(VERTEX.z * 0.072 + TIME * 0.62);
+    float wave_c = sin((VERTEX.x + VERTEX.z) * 0.035 - TIME * 0.45);
+    VERTEX.y += (wave_a + wave_b * 0.65 + wave_c * 0.35) * wave_height;
+}
+void fragment() {
+    float ripple = sin(UV.x * 95.0 + TIME * 0.8) * cos(UV.y * 78.0 - TIME * 0.6);
+    float fresnel = pow(1.0 - clamp(dot(normalize(NORMAL), normalize(VIEW)), 0.0, 1.0), 3.0);
+    ALBEDO = mix(deep_water.rgb, shallow_water.rgb, clamp(0.34 + ripple * 0.045 + fresnel * 0.35, 0.0, 1.0));
+    METALLIC = 0.16;
+    ROUGHNESS = 0.2 + fresnel * 0.12;
+}
+"""
+    var water := ShaderMaterial.new()
+    water.shader = water_shader
     var concrete := _mat(Color(0.30, 0.33, 0.34))
     var glass := _mat(Color(0.12, 0.48, 0.58), true)
 
@@ -472,8 +494,11 @@ func _make_expanded_island() -> void:
     var ocean := MeshInstance3D.new()
     var ocean_mesh := PlaneMesh.new()
     ocean_mesh.size = Vector2(560, 560)
+    ocean_mesh.subdivide_width = 96
+    ocean_mesh.subdivide_depth = 96
     ocean.mesh = ocean_mesh
     ocean.material_override = water
+    ocean.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
     ocean.position = Vector3(0, -1.35, 0)
     add_child(ocean)
 
